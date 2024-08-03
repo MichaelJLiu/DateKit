@@ -1,0 +1,52 @@
+root = true
+
+[*]
+charset = utf-8
+
+[*.cs]
+indent_style = tab
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+csharp_indent_case_contents_when_block = false
+csharp_indent_labels = one_less_than_current
+
+dotnet_separate_import_directive_groups = true
+dotnet_sort_system_directives_first = true
+dotnet_style_predefined_type_for_locals_parameters_members = false
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_style.s_underscore_camel_case.capitalization = camel_case
+dotnet_naming_style.s_underscore_camel_case.required_prefix = s_
+dotnet_naming_style.underscore_camel_case.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case.required_prefix = _
+
+dotnet_naming_symbols.const_fields.applicable_kinds = field
+dotnet_naming_symbols.const_fields.required_modifiers = const
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+
+dotnet_naming_rule.const_fields.severity = suggestion
+dotnet_naming_rule.const_fields.style = pascal_case
+dotnet_naming_rule.const_fields.symbols = const_fields
+dotnet_naming_rule.private_fields.severity = suggestion
+dotnet_naming_rule.private_fields.style = underscore_camel_case
+dotnet_naming_rule.private_fields.symbols = private_fields
+dotnet_naming_rule.private_static_fields.severity = suggestion
+dotnet_naming_rule.private_static_fields.style = s_underscore_camel_case
+dotnet_naming_rule.private_static_fields.symbols = private_static_fields
+
+# Disable code analysis rules that are not valid for .NET Framework
+csharp_style_prefer_index_operator = false # IDE0056: Use index operator
+csharp_style_prefer_range_operator = false # IDE0057: Use range operator
+dotnet_diagnostic.CA1510.severity = none # Use ArgumentNullException throw helper
+
+# Disable other code analysis rules
+dotnet_diagnostic.IDE0290.severity = none # Use primary constructor
+
+[*.csproj]
+indent_size = 2
+indent_style = space
