@@ -12,7 +12,7 @@ namespace DateKit;
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 [TypeConverter(typeof(DateConverter))]
-[DebuggerDisplay($"{{{nameof(DebuggerDisplay)},nq}}")]
+[DebuggerDisplay($"\\{{{{{nameof(DebuggerDisplay)},nq}}\\}}")]
 public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable<Date>, IFormattable
 {
 	#region Constants
@@ -314,7 +314,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		}
 	}
 
-	private String DebuggerDisplay => $"{{{_year:D4}-{_month:D2}-{_day:D2}}}";
+	private String DebuggerDisplay => $"{_year:D4}-{_month:D2}-{_day:D2}";
 
 	#endregion Properties
 

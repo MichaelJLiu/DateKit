@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 using FluentAssertions;
 
@@ -172,6 +173,25 @@ public partial class DateTests
 
 		// Assert:
 		actualDayOfYear.Should().Be(expectedDayOfYear);
+	}
+
+	#endregion
+
+	#region DebuggerDisplay
+
+	[Test]
+	public void DebuggerDisplay_OfValidDate_ReturnsExpected()
+	{
+		// Arrange:
+		PropertyInfo debuggerDisplayProperty =
+			typeof(Date).GetProperty("DebuggerDisplay", BindingFlags.Instance | BindingFlags.NonPublic)!;
+		Date date = new(2000, 6, 15);
+
+		// Act:
+		Object? actualResult = debuggerDisplayProperty.GetValue(date);
+
+		// Assert:
+		actualResult.Should().Be("2000-06-15");
 	}
 
 	#endregion
