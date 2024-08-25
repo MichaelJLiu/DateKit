@@ -17,10 +17,10 @@ partial class DateTests
 	public void DaysInMonth_WithInvalidArguments_ThrowsException(Int32 year, Int32 month, String expectedParamName)
 	{
 		// Act:
-		Action action = () => Date.DaysInMonth(year, month);
+		Func<Int32> func = () => Date.DaysInMonth(year, month);
 
 		// Assert:
-		action.Should().Throw<ArgumentOutOfRangeException>().WithParameterName(expectedParamName);
+		func.Should().Throw<ArgumentOutOfRangeException>().WithParameterName(expectedParamName);
 	}
 
 	[TestCase(Date.MinYear, 1, 31)]
@@ -56,10 +56,10 @@ partial class DateTests
 	public void IsLeapYear_WithInvalidArgument_ThrowsException(Int32 year)
 	{
 		// Act:
-		Action action = () => Date.IsLeapYear(year);
+		Func<Boolean> func = () => Date.IsLeapYear(year);
 
 		// Assert:
-		action.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("year");
+		func.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("year");
 	}
 
 	[TestCase(1, false)]
