@@ -175,8 +175,8 @@ partial struct Date
 	/// </remarks>
 	public static Int32 DaysInMonth(Int32 year, Int32 month)
 	{
-		ValidateYear(year, nameof(year));
-		ValidateMonth(month, nameof(month));
+		ThrowHelper.ThrowIfYearArgumentIsOutOfRange(year, ExceptionArgument.year);
+		ThrowHelper.ThrowIfMonthArgumentIsOutOfRange(month, ExceptionArgument.month);
 		return UnsafeDaysInMonth(year, month);
 	}
 
@@ -245,7 +245,7 @@ partial struct Date
 	/// </remarks>
 	public static Boolean IsLeapYear(Int32 year)
 	{
-		ValidateYear(year, nameof(year));
+		ThrowHelper.ThrowIfYearArgumentIsOutOfRange(year, ExceptionArgument.year);
 		return UnsafeIsLeapYear(year);
 	}
 

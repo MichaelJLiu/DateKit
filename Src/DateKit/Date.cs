@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DateKit;
@@ -89,8 +88,8 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// </value>
 	public static Date MaxValue => UnsafeCreate(MaxYear, December, 31);
 
-	private const Int32 MinDayNumber = 0; // MinValue.DayNumber
-	private const Int32 MaxDayNumber = 3652058; // MaxValue.DayNumber
+	internal const Int32 MinDayNumber = 0; // MinValue.DayNumber
+	internal const Int32 MaxDayNumber = 3652058; // MaxValue.DayNumber
 
 	#endregion Constants
 
@@ -141,9 +140,9 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	public Date(Int32 year, Int32 month, Int32 day)
 		: this()
 	{
-		ValidateYear(year, nameof(year));
-		ValidateMonth(month, nameof(month));
-		ValidateDay(year, month, day, nameof(day));
+		ThrowHelper.ThrowIfYearArgumentIsOutOfRange(year, ExceptionArgument.year);
+		ThrowHelper.ThrowIfMonthArgumentIsOutOfRange(month, ExceptionArgument.month);
+		ThrowHelper.ThrowIfDayArgumentIsOutOfRange(year, month, day, ExceptionArgument.day);
 
 		// Unoptimized:
 		//   _year = (UInt16)year;
@@ -245,7 +244,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		{
 			Int32 year = _year;
 			if (year == 0)
-				ThrowInvalidOperationException();
+				ThrowHelper.ThrowEmptyDateInvalidOperationException();
 			Int32 month = _month;
 
 			// Move January and February to the end of the previous year as months 13 and 14:
@@ -274,7 +273,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		{
 			Int32 year = _year;
 			if (year == 0)
-				ThrowInvalidOperationException();
+				ThrowHelper.ThrowEmptyDateInvalidOperationException();
 			return UnsafeDayOfWeek(year, _month, _day);
 		}
 	}
@@ -294,7 +293,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		{
 			Int32 month = _month;
 			if (month == 0)
-				ThrowInvalidOperationException();
+				ThrowHelper.ThrowEmptyDateInvalidOperationException();
 			Int32 daysInPreviousMonths;
 
 			if (month <= February)
@@ -317,59 +316,4 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	private String DebuggerDisplay => $"{_year:D4}-{_month:D2}-{_day:D2}";
 
 	#endregion Properties
-
-	#region Validation Methods
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal static void ValidateYear(Int32 year, String paramName)
-	{
-		// Unoptimized:
-		//   if (year < MinYear || year > MaxYear)
-		// Optimized:
-		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
-			ThrowArgumentOutOfRangeException(paramName);
-	}
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal static void ValidateMonth(Int32 month, String paramName)
-	{
-		// Unoptimized:
-		//   if (month < January || month > December)
-		// Optimized:
-		if (unchecked((UInt32)(month - January)) > December - January)
-			ThrowArgumentOutOfRangeException(paramName);
-	}
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal static void ValidateDay(Int32 year, Int32 month, Int32 day, String paramName)
-	{
-		// Unoptimized:
-		//   if (day < 1 || day > UnsafeDaysInMonth(year, month))
-		// Optimized:
-		if (unchecked((UInt32)(day - 1)) >= UnsafeDaysInMonth(year, month))
-			ThrowArgumentOutOfRangeException(paramName);
-	}
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static UInt32 ValidateDayNumber(Int32 dayNumber, String paramName)
-	{
-		// Unoptimized:
-		//   if (dayNumber < MinDayNumber || dayNumber > MaxDayNumber)
-		// Optimized:
-		if (unchecked((UInt32)(dayNumber - MinDayNumber)) > MaxDayNumber - MinDayNumber)
-			ThrowArgumentOutOfRangeException(paramName);
-		return (UInt32)dayNumber;
-	}
-
-	private static void ThrowArgumentOutOfRangeException(String paramName)
-	{
-		throw new ArgumentOutOfRangeException(paramName);
-	}
-
-	private static void ThrowInvalidOperationException()
-	{
-		throw new InvalidOperationException("Operation is not supported by the default (empty) Date.");
-	}
-
-	#endregion Validation Methods
 }

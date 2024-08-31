@@ -52,7 +52,12 @@ partial struct Date
 	/// </exception>
 	public static Date FromDayNumber(Int32 dayNumber)
 	{
-		return UnsafeFromDayNumber(ValidateDayNumber(dayNumber, nameof(dayNumber)));
+		// Unoptimized:
+		//   if (dayNumber < Date.MinDayNumber || dayNumber > Date.MaxDayNumber)
+		// Optimized:
+		if (unchecked((UInt32)(dayNumber - Date.MinDayNumber)) > Date.MaxDayNumber - Date.MinDayNumber)
+			ThrowHelper.ThrowArgumentOutOfRangeException(dayNumber, ExceptionArgument.dayNumber);
+		return UnsafeFromDayNumber((UInt32)dayNumber);
 	}
 
 	// This method is equivalent to FromDayNumber but does not validate its argument.

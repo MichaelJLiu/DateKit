@@ -29,14 +29,14 @@ partial struct Date
 	{
 		Int32 packedValue = _packedValue;
 		if (packedValue == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		const Int32 maxNumber = MaxYear - MinYear;
 		// Unoptimized:
 		//   if (number < -maxNumber || number > maxNumber)
 		// Optimized:
 		if (unchecked((UInt32)(number + maxNumber)) > maxNumber * 2)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 
 		packedValue += number << 16;
 		Int32 year = packedValue >>> 16;
@@ -44,7 +44,7 @@ partial struct Date
 		//   if (year < MinYear || year > MaxYear)
 		// Optimized:
 		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		if (unchecked((Int16)packedValue) == (February << 8 | 29) && !UnsafeIsLeapYear(year))
 			--packedValue;
 		return new Date(packedValue);
@@ -75,14 +75,14 @@ partial struct Date
 	{
 		Int32 year = this.Year;
 		if (year == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		const Int32 maxNumber = (MaxYear - MinYear + 1) * MonthsPerYear - 1;
 		// Unoptimized:
 		//   if (number < -maxNumber || number > maxNumber)
 		// Optimized:
 		if (unchecked((UInt32)(number + maxNumber)) > maxNumber * 2)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 
 		Int32 month = this.Month + number;
 		Int32 offsetYears = month > 0 ? (Int32)(((UInt32)month - 1) / MonthsPerYear) : month / MonthsPerYear - 1;
@@ -91,7 +91,7 @@ partial struct Date
 		//   if (year < MinYear || year > MaxYear)
 		// Optimized:
 		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		month -= offsetYears * MonthsPerYear;
 		Int32 day = this.Day;
 
@@ -144,7 +144,7 @@ partial struct Date
 
 		Int32 packedValue = date._packedValue;
 		if (packedValue == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		packedValue += number;
 		Int32 day = unchecked((SByte)packedValue);
@@ -168,7 +168,7 @@ partial struct Date
 					+ 31; // days in December
 			}
 			else
-				ThrowOverflowException();
+				ThrowHelper.ThrowOverflowException();
 		}
 
 		return new Date(packedValue);
@@ -180,9 +180,9 @@ partial struct Date
 
 		Int32 year = date.Year;
 		if (year == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 		if (number < -MaxDayNumber)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		Int32 month = date.Month;
 		Int32 day = date.Day + number;
 
@@ -197,7 +197,7 @@ partial struct Date
 					if (year > MinYear)
 						--year;
 					else
-						ThrowOverflowException();
+						ThrowHelper.ThrowOverflowException();
 
 					month = December;
 				}
@@ -210,7 +210,7 @@ partial struct Date
 
 		Int32 dayNumber = date.DayNumber + number;
 		if (dayNumber < MinDayNumber)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		return UnsafeFromDayNumber((UInt32)dayNumber);
 	}
 
@@ -221,7 +221,7 @@ partial struct Date
 
 		Int32 packedValue = date._packedValue;
 		if (packedValue == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		packedValue += number;
 		Int32 day = unchecked((Byte)packedValue);
@@ -240,7 +240,7 @@ partial struct Date
 				else if (year < MaxYear)
 					packedValue += (1 << 16) + (January << 8) - (December << 8); // increment year and reset month
 				else
-					ThrowOverflowException();
+					ThrowHelper.ThrowOverflowException();
 			}
 		}
 
@@ -253,9 +253,9 @@ partial struct Date
 
 		Int32 year = date.Year;
 		if (year == 0)
-			ThrowInvalidOperationException();
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 		if (number > MaxDayNumber)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		Int32 month = date.Month;
 		Int32 day = date.Day + number;
 
@@ -274,7 +274,7 @@ partial struct Date
 					if (year < MaxYear)
 						++year;
 					else
-						ThrowOverflowException();
+						ThrowHelper.ThrowOverflowException();
 
 					month = January;
 				}
@@ -287,7 +287,7 @@ partial struct Date
 
 		Int32 dayNumber = date.DayNumber + number;
 		if (dayNumber > MaxDayNumber)
-			ThrowOverflowException();
+			ThrowHelper.ThrowOverflowException();
 		return UnsafeFromDayNumber((UInt32)dayNumber);
 	}
 
@@ -330,14 +330,17 @@ partial struct Date
 	/// </item>
 	/// </list>
 	/// </returns>
+	/// <exception cref="ArgumentException">
+	/// <paramref name="date1" /> or <paramref name="date2" /> is <see cref="Empty" />.
+	/// </exception>
 	public static Int32 Subtract(Date date1, Date date2)
 	{
 		Int32 packedValue1 = date1._packedValue;
 		if (packedValue1 == 0)
-			ThrowArgumentException(nameof(date1));
+			ThrowHelper.ThrowEmptyDateArgumentException(ExceptionArgument.date1);
 		Int32 packedValue2 = date2._packedValue;
 		if (packedValue2 == 0)
-			ThrowArgumentException(nameof(date2));
+			ThrowHelper.ThrowEmptyDateArgumentException(ExceptionArgument.date2);
 
 		Int32 result = packedValue1 - packedValue2;
 
@@ -461,15 +464,5 @@ partial struct Date
 	public static Int32 operator -(Date date1, Date date2)
 	{
 		return Subtract(date1, date2);
-	}
-
-	private static void ThrowArgumentException(String paramName)
-	{
-		throw new ArgumentException("Operation is not supported by the default (empty) Date.", paramName);
-	}
-
-	private static void ThrowOverflowException()
-	{
-		throw new OverflowException("The resulting date exceeds the range of the Date type.");
 	}
 }
