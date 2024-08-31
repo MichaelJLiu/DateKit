@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics;
-#if NET8_0_OR_GREATER && DATEKIT_LOOKUP_TABLES // for InlineArrayAttribute
 using System.Runtime.CompilerServices;
-#endif
 
 namespace DateKit;
 
@@ -252,6 +250,7 @@ partial struct Date
 	}
 
 	// This method is equivalent to IsLeapYear but does not validate its arguments.
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	internal static Boolean UnsafeIsLeapYear(Int32 year)
 	{
 		Debug.Assert(year >= 1);

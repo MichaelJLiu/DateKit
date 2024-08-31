@@ -62,7 +62,7 @@ const int MonthsPerYear = 12;
 const int DaysPerYear = 365; // days in a common (non-leap) year
 const int DaysPerWeek = 7;
 
-static int DaysInMonth(int year, int month); // same as DateTime.DaysInMonth
+static int DaysInMonth(int year, int month); // faster than DateTime.DaysInMonth
 static bool IsLeapYear(int year); // same as DateTime.IsLeapYear
 ```
 
