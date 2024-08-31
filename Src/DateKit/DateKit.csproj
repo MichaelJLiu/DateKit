@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
 
     <!-- Packaging -->
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <Authors>Michael J. Liu</Authors>
     <Description>A simple and efficient date-only type for .NET and .NET Framework.</Description>
     <Copyright>Copyright (c) 2024 Michael J. Liu.</Copyright>
