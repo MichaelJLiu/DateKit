@@ -460,9 +460,8 @@ public class DatePattern
 	/// </exception>
 	public Date ParseExact(String s)
 	{
-		if (s == null)
-			throw new ArgumentNullException(nameof(s));
-		else if (ParseContext.TryParse(_tokens, s.AsSpan(), out Date date))
+		ThrowHelper.ThrowIfArgumentIsNull(s);
+		if (ParseContext.TryParse(_tokens, s.AsSpan(), out Date date))
 			return date;
 		else
 			throw new FormatException($"'{s}' is not a valid date string.");

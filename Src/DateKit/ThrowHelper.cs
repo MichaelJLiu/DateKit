@@ -27,6 +27,11 @@ internal static class ThrowHelper
 		nameof(ExceptionArgument.dayNumber),
 	];
 
+	public static void ThrowArgumentNullException(String? paramName)
+	{
+		throw new ArgumentNullException(paramName);
+	}
+
 	// Optimization note: This method is generic to avoid boxing the actualValue at call sites.
 	public static void ThrowArgumentOutOfRangeException<TValue>(TValue actualValue, ExceptionArgument argument)
 	{
@@ -46,6 +51,14 @@ internal static class ThrowHelper
 	public static void ThrowOverflowException()
 	{
 		throw new OverflowException("The resulting date exceeds the range of the Date type.");
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void ThrowIfArgumentIsNull(
+		Object? value, [CallerArgumentExpression(nameof(value))] String? paramName = null)
+	{
+		if (value == null)
+			ThrowArgumentNullException(paramName);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
