@@ -820,6 +820,8 @@ public class DatePattern
 
 	#endregion Tokens
 
+	#region Contexts
+
 	private ref struct FormatContext
 	{
 		// Input:
@@ -876,8 +878,8 @@ public class DatePattern
 			// Optimized (valid for number in [0, 16383]; 10 is minimum shift count that encompasses [0, 99]):
 			const Int32 shift = 16;
 			const Int32 multiplier = (1 << shift) / divisor + 1;
-			Int32 tens = number * multiplier >>> shift;
-			Int32 ones = (Int32)((UInt32)number * multiplier % (1 << shift) * divisor >>> shift);
+			Int32 tens = (number * multiplier) >>> shift;
+			Int32 ones = (Int32)(((UInt32)number * multiplier % (1 << shift) * divisor) >>> shift);
 
 			Span<Char> chars = _chars;
 			chars[1] = (Char)(ones + '0'); // Access index 1 first to elide bounds check on index 0.
@@ -1093,4 +1095,6 @@ public class DatePattern
 			return true;
 		}
 	}
+
+	#endregion
 }

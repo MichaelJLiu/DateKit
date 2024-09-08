@@ -107,7 +107,8 @@ partial class DateTests
 	}
 
 	[TestCase("2000-06-15", 2000, 6, 15)]
-	public void ParseIsoString_WithValidArgument_ReturnsDate(String s, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
+	public void ParseIsoString_WithValidArgument_ReturnsDate(
+		String s, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
 	{
 		// Act:
 		Date actualDate = Date.ParseIsoString(s);

@@ -1,4 +1,5 @@
 * text=auto
 *.cs text
 *.csproj text
+*.DotSettings text eol=lf
 *.sln text

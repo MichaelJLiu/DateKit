@@ -13,6 +13,7 @@ public class DateConverter : TypeConverter
 {
 	private static readonly PropertyInfo s_emptyProperty =
 		typeof(Date).GetProperty(nameof(Date.Empty), BindingFlags.Public | BindingFlags.Static)!;
+
 	private static readonly ConstructorInfo s_constructor =
 		typeof(Date).GetConstructor([typeof(Int32), typeof(Int32), typeof(Int32)])!;
 
@@ -61,7 +62,7 @@ public class DateConverter : TypeConverter
 			{
 				return date != Date.Empty
 					? new InstanceDescriptor(s_constructor, new Object[] { date.Year, date.Month, date.Day })
-					: new InstanceDescriptor(s_emptyProperty, null);
+					: new InstanceDescriptor(s_emptyProperty, arguments: null);
 			}
 		}
 

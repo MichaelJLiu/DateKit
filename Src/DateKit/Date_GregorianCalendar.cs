@@ -145,7 +145,7 @@ partial struct Date
 		const Int32 shift = 16;
 		const Int32 multiplier = (1 << shift) / DaysPerWeek + 1;
 #endif
-		Int32 dayOfWeek = (Int32)((UInt32)sum * multiplier % (1 << shift) * DaysPerWeek >>> shift);
+		Int32 dayOfWeek = (Int32)(((UInt32)sum * multiplier % (1 << shift) * DaysPerWeek) >>> shift);
 		return (DayOfWeek)dayOfWeek;
 	}
 
@@ -220,7 +220,7 @@ partial struct Date
 #else
 		// Calculate the number of days between March 1, 0000, and March 1 of the specified year:
 		Int32 century = GetCentury(year);
-		Int32 daysInPreviousYears = (year * DaysPer4Years >>> 2) - century + (century >>> 2);
+		Int32 daysInPreviousYears = ((year * DaysPer4Years) >>> 2) - century + (century >>> 2);
 
 		// Move the epoch from March 1, 0000, to January 1, 0001, and subtract one:
 		return daysInPreviousYears - (DaysPerYear - 31 - 28 + 1);
@@ -258,7 +258,7 @@ partial struct Date
 		UInt32 unsignedYear = (UInt32)year;
 
 		// If the year is not divisible by 4, it is not a leap year:
-		if (unsignedYear % 4 != 0) 
+		if (unsignedYear % 4 != 0)
 			return false;
 
 		// If the year is divisible by 16 (including 400 but excluding 100), it is a leap year:
@@ -287,7 +287,7 @@ partial struct Date
 		// Optimized (valid for year in [0, 43698]; 19 is minimum shift count that encompasses [0, 9999]):
 		const Int32 shift = 19;
 		const Int32 multiplier = (1 << shift) / divisor + 1;
-		return year * multiplier >>> shift;
+		return (year * multiplier) >>> shift;
 	}
 
 	// Divides a specified year by 100 and returns the remainder.
@@ -301,6 +301,6 @@ partial struct Date
 		// Optimized (valid for year in [0, 43698]; 19 is minimum shift count that encompasses [0, 9999]):
 		const Int32 shift = 19;
 		const Int32 multiplier = (1 << shift) / divisor + 1;
-		return (Int32)((UInt32)year * multiplier % (1 << shift) * divisor >>> shift);
+		return (Int32)(((UInt32)year * multiplier % (1 << shift) * divisor) >>> shift);
 	}
 }

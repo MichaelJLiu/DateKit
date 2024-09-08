@@ -53,9 +53,9 @@ partial struct Date
 	public static Date FromDayNumber(Int32 dayNumber)
 	{
 		// Unoptimized:
-		//   if (dayNumber < Date.MinDayNumber || dayNumber > Date.MaxDayNumber)
+		//   if (dayNumber < MinDayNumber || dayNumber > MaxDayNumber)
 		// Optimized:
-		if (unchecked((UInt32)(dayNumber - Date.MinDayNumber)) > Date.MaxDayNumber - Date.MinDayNumber)
+		if (unchecked((UInt32)(dayNumber - MinDayNumber)) > MaxDayNumber - MinDayNumber)
 			ThrowHelper.ThrowArgumentOutOfRangeException(dayNumber, ExceptionArgument.dayNumber);
 		return UnsafeFromDayNumber((UInt32)dayNumber);
 	}

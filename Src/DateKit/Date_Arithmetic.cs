@@ -45,7 +45,7 @@ partial struct Date
 		// Optimized:
 		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
 			ThrowHelper.ThrowOverflowException();
-		if (unchecked((Int16)packedValue) == (February << 8 | 29) && !UnsafeIsLeapYear(year))
+		if (unchecked((Int16)packedValue) == ((February << 8) | 29) && !UnsafeIsLeapYear(year))
 			--packedValue;
 		return new Date(packedValue);
 	}
@@ -396,7 +396,7 @@ partial struct Date
 	/// </exception>
 	public static Date operator --(Date date)
 	{
-		return AddSmallNegativeDays(date, -1);
+		return AddSmallNegativeDays(date, number: -1);
 	}
 
 	/// <summary>
@@ -416,7 +416,7 @@ partial struct Date
 	/// </exception>
 	public static Date operator ++(Date date)
 	{
-		return AddSmallPositiveDays(date, 1);
+		return AddSmallPositiveDays(date, number: 1);
 	}
 
 	/// <summary>

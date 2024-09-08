@@ -78,7 +78,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// <value>
 	/// The <see cref="Date" /> that represents January 1, 0001.
 	/// </value>
-	public static Date MinValue => UnsafeCreate(MinYear, January, 1);
+	public static Date MinValue => UnsafeCreate(MinYear, January, day: 1);
 
 	/// <summary>
 	/// Gets the latest possible <see cref="Date" />.
@@ -86,7 +86,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// <value>
 	/// The <see cref="Date" /> that represents December 31, 9999.
 	/// </value>
-	public static Date MaxValue => UnsafeCreate(MaxYear, December, 31);
+	public static Date MaxValue => UnsafeCreate(MaxYear, December, day: 31);
 
 	internal const Int32 MinDayNumber = 0; // MinValue.DayNumber
 	internal const Int32 MaxDayNumber = 3652058; // MaxValue.DayNumber
@@ -99,6 +99,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	[FieldOffset(2)] private readonly UInt16 _year;
 	[FieldOffset(1)] private readonly Byte _month;
 	[FieldOffset(0)] private readonly Byte _day;
+
 	// The field offsets depend on the architecture:
 	//
 	// Architecture  |  0  |  1  |  2  |  3  |
@@ -149,7 +150,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		//   _month = (Byte)month;
 		//   _day = (Byte)day;
 		// Optimized:
-		_packedValue = year << 16 | month << 8 | day;
+		_packedValue = (year << 16) | (month << 8) | day;
 	}
 
 	// This method is equivalent to Date(Int32, Int32, Int32) but does not validate its arguments.
@@ -162,7 +163,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		Debug.Assert(day >= 1);
 		Debug.Assert(day <= UnsafeDaysInMonth(year, month));
 
-		return new Date(year << 16 | month << 8 | day);
+		return new Date((year << 16) | (month << 8) | day);
 	}
 
 	private Date(Int32 packedValue)
