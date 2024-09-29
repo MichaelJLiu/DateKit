@@ -211,15 +211,15 @@ public partial class DateTests
 		while (true)
 		{
 			// Act:
-			Date date = Date.FromDateTime(dateTime);
-			Int32 actualDayNumber = date.DayNumber;
-			DayOfWeek actualDayOfWeek = date.DayOfWeek;
-			Int32 actualDayOfYear = date.DayOfYear;
+			Date actualDate = Date.FromDateTime(dateTime);
+			Int32 actualDayNumber = actualDate.DayNumber;
+			DayOfWeek actualDayOfWeek = actualDate.DayOfWeek;
+			Int32 actualDayOfYear = actualDate.DayOfYear;
 
 			// Assert:
-			date.Year.Should().Be(dateTime.Year);
-			date.Month.Should().Be(dateTime.Month);
-			date.Day.Should().Be(dateTime.Day);
+			actualDate.Year.Should().Be(dateTime.Year);
+			actualDate.Month.Should().Be(dateTime.Month);
+			actualDate.Day.Should().Be(dateTime.Day);
 			actualDayNumber.Should().Be(expectedDayNumber);
 			actualDayOfWeek.Should().Be(dateTime.DayOfWeek);
 			actualDayOfYear.Should().Be(dateTime.DayOfYear);

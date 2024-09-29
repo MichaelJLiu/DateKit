@@ -21,12 +21,12 @@ partial class DateTests
 		DateOnly dateOnly = new(year, month, day);
 
 		// Act:
-		Date actualDate = Date.FromDateOnly(dateOnly);
+		Date actualResult = Date.FromDateOnly(dateOnly);
 
 		// Assert:
-		actualDate.Year.Should().Be(year);
-		actualDate.Month.Should().Be(month);
-		actualDate.Day.Should().Be(day);
+		actualResult.Year.Should().Be(year);
+		actualResult.Month.Should().Be(month);
+		actualResult.Day.Should().Be(day);
 	}
 
 	#endregion
@@ -43,12 +43,12 @@ partial class DateTests
 		DateTime dateTime = new(year, month, day);
 
 		// Act:
-		Date actualDate = Date.FromDateTime(dateTime);
+		Date actualResult = Date.FromDateTime(dateTime);
 
 		// Assert:
-		actualDate.Year.Should().Be(year);
-		actualDate.Month.Should().Be(month);
-		actualDate.Day.Should().Be(day);
+		actualResult.Year.Should().Be(year);
+		actualResult.Month.Should().Be(month);
+		actualResult.Day.Should().Be(day);
 	}
 
 	#endregion
@@ -73,12 +73,12 @@ partial class DateTests
 		Int32 dayNumber, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
 	{
 		// Act:
-		Date actualDate = Date.FromDayNumber(dayNumber);
+		Date actualResult = Date.FromDayNumber(dayNumber);
 
 		// Assert:
-		actualDate.Year.Should().Be(expectedYear);
-		actualDate.Month.Should().Be(expectedMonth);
-		actualDate.Day.Should().Be(expectedDay);
+		actualResult.Year.Should().Be(expectedYear);
+		actualResult.Month.Should().Be(expectedMonth);
+		actualResult.Day.Should().Be(expectedDay);
 	}
 
 	#endregion
@@ -111,12 +111,12 @@ partial class DateTests
 		String s, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
 	{
 		// Act:
-		Date actualDate = Date.ParseIsoString(s);
+		Date actualResult = Date.ParseIsoString(s);
 
 		// Assert:
-		actualDate.Year.Should().Be(expectedYear);
-		actualDate.Month.Should().Be(expectedMonth);
-		actualDate.Day.Should().Be(expectedDay);
+		actualResult.Year.Should().Be(expectedYear);
+		actualResult.Month.Should().Be(expectedMonth);
+		actualResult.Day.Should().Be(expectedDay);
 	}
 
 	#endregion
@@ -146,12 +146,12 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		DateOnly actualDateOnly = date.ToDateOnly();
+		DateOnly actualResult = date.ToDateOnly();
 
 		// Assert:
-		actualDateOnly.Year.Should().Be(year);
-		actualDateOnly.Month.Should().Be(month);
-		actualDateOnly.Day.Should().Be(day);
+		actualResult.Year.Should().Be(year);
+		actualResult.Month.Should().Be(month);
+		actualResult.Day.Should().Be(day);
 	}
 
 	#endregion
@@ -181,13 +181,13 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		DateTime actualDateTime = date.ToDateTime(kind);
+		DateTime actualResult = date.ToDateTime(kind);
 
 		// Assert:
-		actualDateTime.Year.Should().Be(year);
-		actualDateTime.Month.Should().Be(month);
-		actualDateTime.Day.Should().Be(day);
-		actualDateTime.Kind.Should().Be(kind);
+		actualResult.Year.Should().Be(year);
+		actualResult.Month.Should().Be(month);
+		actualResult.Day.Should().Be(day);
+		actualResult.Kind.Should().Be(kind);
 	}
 
 	#endregion

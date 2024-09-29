@@ -68,13 +68,13 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		Date actualDate = date.AddYears(number);
+		Date actualResult = date.AddYears(number);
 
 		// Assert:
-		DateTime expectedDate = new DateTime(year, month, day).AddYears(number);
-		actualDate.Year.Should().Be(expectedDate.Year);
-		actualDate.Month.Should().Be(expectedDate.Month);
-		actualDate.Day.Should().Be(expectedDate.Day);
+		DateTime expectedResult = new DateTime(year, month, day).AddYears(number);
+		actualResult.Year.Should().Be(expectedResult.Year);
+		actualResult.Month.Should().Be(expectedResult.Month);
+		actualResult.Day.Should().Be(expectedResult.Day);
 	}
 
 	#endregion
@@ -144,13 +144,13 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		Date actualDate = date.AddMonths(number);
+		Date actualResult = date.AddMonths(number);
 
 		// Assert:
-		DateTime expectedDate = new DateTime(year, month, day).AddMonths(number);
-		actualDate.Year.Should().Be(expectedDate.Year);
-		actualDate.Month.Should().Be(expectedDate.Month);
-		actualDate.Day.Should().Be(expectedDate.Day);
+		DateTime expectedResult = new DateTime(year, month, day).AddMonths(number);
+		actualResult.Year.Should().Be(expectedResult.Year);
+		actualResult.Month.Should().Be(expectedResult.Month);
+		actualResult.Day.Should().Be(expectedResult.Day);
 	}
 
 	#endregion
