@@ -137,6 +137,16 @@ partial struct Date
 		}
 	}
 
+	internal static Date AddSmallDays(Date date, Int32 number)
+	{
+		Debug.Assert(number >= -MinDaysPerMonth);
+		Debug.Assert(number <= MinDaysPerMonth);
+
+		return number >= 0
+			? AddSmallPositiveDays(date, number)
+			: AddSmallNegativeDays(date, number);
+	}
+
 	private static Date AddSmallNegativeDays(Date date, Int32 number)
 	{
 		Debug.Assert(number <= 0);

@@ -149,6 +149,16 @@ partial struct Date
 		return (DayOfWeek)dayOfWeek;
 	}
 
+	internal static Int32 UnsafeDaysInMonth(Int32 month)
+	{
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+
+		return month != February
+			? ((month >>> 3) ^ month) | 30
+			: 28;
+	}
+
 	/// <summary>
 	/// Returns the number of days in a specified month and year.
 	/// </summary>
@@ -180,7 +190,7 @@ partial struct Date
 		return UnsafeDaysInMonth(year, month);
 	}
 
-	// This method is equivalent to DaysInMonth but does not validate its arguments.
+	// This method is equivalent to DaysInMonth(Int32, Int32) but does not validate its arguments.
 	internal static Int32 UnsafeDaysInMonth(Int32 year, Int32 month)
 	{
 		Debug.Assert(year >= 1);

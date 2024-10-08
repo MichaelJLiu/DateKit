@@ -6,9 +6,11 @@ namespace DateKit;
 internal enum ExceptionArgument
 {
 	// ReSharper disable InconsistentNaming
+	value,
 	year,
 	month,
 	day,
+	dayOfWeek,
 	date,
 	date1,
 	date2,
@@ -20,9 +22,11 @@ internal static class ThrowHelper
 {
 	private static readonly String[] s_paramNames =
 	[
+		nameof(ExceptionArgument.value),
 		nameof(ExceptionArgument.year),
 		nameof(ExceptionArgument.month),
 		nameof(ExceptionArgument.day),
+		nameof(ExceptionArgument.dayOfWeek),
 		nameof(ExceptionArgument.date),
 		nameof(ExceptionArgument.date1),
 		nameof(ExceptionArgument.date2),
@@ -81,6 +85,17 @@ internal static class ThrowHelper
 		// Optimized:
 		if (unchecked((UInt32)(month - Date.January)) > Date.December - Date.January)
 			ThrowArgumentOutOfRangeException(month, argument);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void ThrowIfDayArgumentIsOutOfRange(Int32 month, Int32 day, ExceptionArgument argument)
+	{
+		// Unoptimized:
+		//   if (day < 1 || (day > Date.MinDaysPerMonth && day > Date.UnsafeDaysInMonth(month)))
+		// Optimized:
+		UInt32 dayMinusOne = unchecked((UInt32)(day - 1));
+		if (dayMinusOne >= Date.MinDaysPerMonth && dayMinusOne >= Date.UnsafeDaysInMonth(month))
+			ThrowArgumentOutOfRangeException(day, argument);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
