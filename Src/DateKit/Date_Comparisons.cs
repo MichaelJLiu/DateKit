@@ -47,6 +47,11 @@ partial struct Date
 		return date1._packedValue - date2._packedValue;
 	}
 
+	internal static Int32 ReverseCompare(Date date1, Date date2)
+	{
+		return date2._packedValue - date1._packedValue;
+	}
+
 	/// <summary>
 	/// Compares this instance to another specified <see cref="Date" />
 	/// and returns a signed integer that indicates their relative order.

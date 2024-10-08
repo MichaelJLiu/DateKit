@@ -9,6 +9,7 @@ internal enum ExceptionArgument
 	year,
 	month,
 	day,
+	date,
 	date1,
 	date2,
 	dayNumber,
@@ -22,6 +23,7 @@ internal static class ThrowHelper
 		nameof(ExceptionArgument.year),
 		nameof(ExceptionArgument.month),
 		nameof(ExceptionArgument.day),
+		nameof(ExceptionArgument.date),
 		nameof(ExceptionArgument.date1),
 		nameof(ExceptionArgument.date2),
 		nameof(ExceptionArgument.dayNumber),
@@ -90,6 +92,13 @@ internal static class ThrowHelper
 		UInt32 dayMinusOne = unchecked((UInt32)(day - 1));
 		if (dayMinusOne >= Date.MinDaysPerMonth && dayMinusOne >= Date.UnsafeDaysInMonth(year, month))
 			ThrowArgumentOutOfRangeException(day, argument);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void ThrowIfDateArgumentIsEmpty(Date date, ExceptionArgument argument)
+	{
+		if (date == Date.Empty)
+			ThrowEmptyDateArgumentException(argument);
 	}
 
 	private static String GetParamName(ExceptionArgument argument)
