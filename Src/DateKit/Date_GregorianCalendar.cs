@@ -197,15 +197,12 @@ partial struct Date
 		Debug.Assert(month <= December);
 
 		return month != February
-			? ((month >>> 3) ^ month) | 30
+			? (month | 30) ^ (month >>> 3)
 			: UncheckedIsLeapYear(year) ? LeapDay : DaysInFebruary;
 
-		// month               | (month >> 3) ^ month | ... OR 0b1110
-		// ------------------- | -------------------- | -------------
-		// 1, 3, 5, 7 = 0b0XX1 | 0 ^ 0b0XX1 = 0b0XX1  | 0b1111 = 31
-		// 4, 6       = 0b0XX0 | 0 ^ 0b0XX0 = 0b0XX0  | 0b1110 = 30
-		// 8, 10, 12  = 0b1XX0 | 1 ^ 0b1XX0 = 0b1XX1  | 0b1111 = 31
-		// 9, 11      = 0b1XX1 | 1 ^ 0b1XX1 = 0b1XX0  | 0b1110 = 30
+		// (month | 0b11110) equals 30 for even months and 31 for odd months, which is correct if month <= 7
+		// but incorrect if month >= 8. In the former case, (month >>> 3) equals 0, and the XOR has no effect.
+		// In the latter case, (month >>> 3) equals 1, and the XOR changes 30 to 31 and vice versa.
 	}
 
 	// Returns the number of days between March 1 and the first day of a specified month.
