@@ -62,7 +62,7 @@ partial class DateTests
 		Func<Int32> func = () => date.CompareTo("");
 
 		// Assert:
-		func.Should().Throw<ArgumentException>().WithParameterName("value");
+		func.Should().Throw<ArgumentException>().WithParameterName("obj");
 	}
 
 	/// <summary>

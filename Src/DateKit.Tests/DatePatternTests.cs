@@ -285,9 +285,7 @@ public class DatePatternTests
 
 		// Assert:
 		actualResult.Should().BeTrue();
-		actualDate.Year.Should().Be(expectedYear);
-		actualDate.Month.Should().Be(expectedMonth);
-		actualDate.Day.Should().Be(expectedDay);
+		actualDate.Should().HaveComponents(expectedYear, expectedMonth, expectedDay);
 	}
 
 	[TestCase("6/15/00", 99, null)]

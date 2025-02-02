@@ -21,12 +21,10 @@ partial class DateTests
 		DateOnly dateOnly = new(year, month, day);
 
 		// Act:
-		Date actualDate = Date.FromDateOnly(dateOnly);
+		Date actualResult = Date.FromDateOnly(dateOnly);
 
 		// Assert:
-		actualDate.Year.Should().Be(year);
-		actualDate.Month.Should().Be(month);
-		actualDate.Day.Should().Be(day);
+		actualResult.Should().HaveComponents(year, month, day);
 	}
 
 	#endregion
@@ -43,12 +41,10 @@ partial class DateTests
 		DateTime dateTime = new(year, month, day);
 
 		// Act:
-		Date actualDate = Date.FromDateTime(dateTime);
+		Date actualResult = Date.FromDateTime(dateTime);
 
 		// Assert:
-		actualDate.Year.Should().Be(year);
-		actualDate.Month.Should().Be(month);
-		actualDate.Day.Should().Be(day);
+		actualResult.Should().HaveComponents(year, month, day);
 	}
 
 	#endregion
@@ -73,12 +69,10 @@ partial class DateTests
 		Int32 dayNumber, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
 	{
 		// Act:
-		Date actualDate = Date.FromDayNumber(dayNumber);
+		Date actualResult = Date.FromDayNumber(dayNumber);
 
 		// Assert:
-		actualDate.Year.Should().Be(expectedYear);
-		actualDate.Month.Should().Be(expectedMonth);
-		actualDate.Day.Should().Be(expectedDay);
+		actualResult.Should().HaveComponents(expectedYear, expectedMonth, expectedDay);
 	}
 
 	#endregion
@@ -107,15 +101,14 @@ partial class DateTests
 	}
 
 	[TestCase("2000-06-15", 2000, 6, 15)]
-	public void ParseIsoString_WithValidArgument_ReturnsDate(String s, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
+	public void ParseIsoString_WithValidArgument_ReturnsDate(
+		String s, Int32 expectedYear, Int32 expectedMonth, Int32 expectedDay)
 	{
 		// Act:
-		Date actualDate = Date.ParseIsoString(s);
+		Date actualResult = Date.ParseIsoString(s);
 
 		// Assert:
-		actualDate.Year.Should().Be(expectedYear);
-		actualDate.Month.Should().Be(expectedMonth);
-		actualDate.Day.Should().Be(expectedDay);
+		actualResult.Should().HaveComponents(expectedYear, expectedMonth, expectedDay);
 	}
 
 	#endregion
@@ -133,7 +126,7 @@ partial class DateTests
 		Func<DateOnly> func = () => date.ToDateOnly();
 
 		// Arrange:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 1)]
@@ -145,12 +138,11 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		DateOnly actualDateOnly = date.ToDateOnly();
+		DateOnly actualResult = date.ToDateOnly();
 
 		// Assert:
-		actualDateOnly.Year.Should().Be(year);
-		actualDateOnly.Month.Should().Be(month);
-		actualDateOnly.Day.Should().Be(day);
+		DateOnly expectedResult = new(year, month, day);
+		actualResult.Should().Be(expectedResult);
 	}
 
 	#endregion
@@ -168,7 +160,7 @@ partial class DateTests
 		Func<DateTime> func = () => date.ToDateTime();
 
 		// Arrange:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 1, DateTimeKind.Unspecified)]
@@ -180,13 +172,12 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		DateTime actualDateTime = date.ToDateTime(kind);
+		DateTime actualResult = date.ToDateTime(kind);
 
 		// Assert:
-		actualDateTime.Year.Should().Be(year);
-		actualDateTime.Month.Should().Be(month);
-		actualDateTime.Day.Should().Be(day);
-		actualDateTime.Kind.Should().Be(kind);
+		DateTime expectedResult = new(year, month, day);
+		actualResult.Should().Be(expectedResult);
+		actualResult.Kind.Should().Be(kind);
 	}
 
 	#endregion

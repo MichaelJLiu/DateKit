@@ -8,6 +8,8 @@ namespace DateKit;
 
 partial class DateTests
 {
+	private const String OverflowExceptionMessage = "The resulting date exceeds the range of the Date type.";
+
 	#region AddYears
 
 	[TestCase(Int32.MinValue)]
@@ -23,7 +25,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddYears(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[Test]
@@ -36,7 +38,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddYears(0);
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 1, -1)]
@@ -52,7 +54,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddYears(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 12, 31, Date.MaxYear - Date.MinYear)]
@@ -68,13 +70,11 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		Date actualDate = date.AddYears(number);
+		Date actualResult = date.AddYears(number);
 
 		// Assert:
-		DateTime expectedDate = new DateTime(year, month, day).AddYears(number);
-		actualDate.Year.Should().Be(expectedDate.Year);
-		actualDate.Month.Should().Be(expectedDate.Month);
-		actualDate.Day.Should().Be(expectedDate.Day);
+		DateTime expectedResult = new DateTime(year, month, day).AddYears(number);
+		actualResult.Should().HaveSameComponentsAs(expectedResult);
 	}
 
 	#endregion
@@ -94,7 +94,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddMonths(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[Test]
@@ -107,7 +107,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddMonths(0);
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 1, -1)]
@@ -123,7 +123,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddMonths(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 31, (Date.MaxYear - Date.MinYear + 1) * Date.MonthsPerYear - 1)]
@@ -144,13 +144,11 @@ partial class DateTests
 		Date date = new(year, month, day);
 
 		// Act:
-		Date actualDate = date.AddMonths(number);
+		Date actualResult = date.AddMonths(number);
 
 		// Assert:
-		DateTime expectedDate = new DateTime(year, month, day).AddMonths(number);
-		actualDate.Year.Should().Be(expectedDate.Year);
-		actualDate.Month.Should().Be(expectedDate.Month);
-		actualDate.Day.Should().Be(expectedDate.Day);
+		DateTime expectedResult = new DateTime(year, month, day).AddMonths(number);
+		actualResult.Should().HaveSameComponentsAs(expectedResult);
 	}
 
 	#endregion
@@ -170,7 +168,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddDays(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	// AddLargeNegativeDays
@@ -193,7 +191,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddDays(number);
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	// AddLargeNegativeDays
@@ -215,7 +213,7 @@ partial class DateTests
 		Func<Date> func = () => date.AddDays(number);
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	// AddLargeNegativeDays
@@ -259,9 +257,7 @@ partial class DateTests
 
 		// Assert:
 		DateTime expectedResult = new DateTime(year, month, day).AddDays(number);
-		actualResult.Year.Should().Be(expectedResult.Year);
-		actualResult.Month.Should().Be(expectedResult.Month);
-		actualResult.Day.Should().Be(expectedResult.Day);
+		actualResult.Should().HaveSameComponentsAs(expectedResult);
 	}
 
 	#endregion
@@ -322,7 +318,7 @@ partial class DateTests
 		Func<Date> func = () => --date;
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[Test]
@@ -335,7 +331,7 @@ partial class DateTests
 		Func<Date> func = () => --date;
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 2)]
@@ -351,10 +347,8 @@ partial class DateTests
 		--date;
 
 		// Assert:
-		DateTime expectedResult = new DateTime(year, month, day).Add(-OneDay);
-		date.Year.Should().Be(expectedResult.Year);
-		date.Month.Should().Be(expectedResult.Month);
-		date.Day.Should().Be(expectedResult.Day);
+		DateTime expectedResult = new DateTime(year, month, day).Add(-s_oneDay);
+		date.Should().HaveSameComponentsAs(expectedResult);
 	}
 
 	#endregion
@@ -371,7 +365,7 @@ partial class DateTests
 		Func<Date> func = () => ++date;
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[Test]
@@ -384,7 +378,7 @@ partial class DateTests
 		Func<Date> func = () => ++date;
 
 		// Assert:
-		func.Should().Throw<OverflowException>();
+		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
 	[TestCase(Date.MinYear, 1, 1)]
@@ -400,10 +394,8 @@ partial class DateTests
 		++date;
 
 		// Assert:
-		DateTime expectedResult = new DateTime(year, month, day).Add(OneDay);
-		date.Year.Should().Be(expectedResult.Year);
-		date.Month.Should().Be(expectedResult.Month);
-		date.Day.Should().Be(expectedResult.Day);
+		DateTime expectedResult = new DateTime(year, month, day).Add(s_oneDay);
+		date.Should().HaveSameComponentsAs(expectedResult);
 	}
 
 	#endregion
