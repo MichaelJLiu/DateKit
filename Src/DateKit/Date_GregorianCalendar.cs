@@ -158,6 +158,17 @@ partial struct Date
 		return (DayOfWeek)dayOfWeek;
 	}
 
+	// Returns the number of days in a specified month of a common (non-leap) year.
+	internal static Int32 UncheckedDaysInMonth(Int32 month)
+	{
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+
+		return month != February
+			? (month | 30) ^ (month >>> 3)
+			: DaysInFebruary;
+	}
+
 	/// <summary>
 	/// Returns the number of days in a specified month and year.
 	/// </summary>
@@ -189,7 +200,7 @@ partial struct Date
 		return UncheckedDaysInMonth(year, month);
 	}
 
-	// This method is equivalent to DaysInMonth but does not validate its arguments.
+	// This method is equivalent to DaysInMonth(Int32, Int32) but does not validate its arguments.
 	internal static Int32 UncheckedDaysInMonth(Int32 year, Int32 month)
 	{
 		Debug.Assert(year >= 1);
