@@ -13,7 +13,9 @@ namespace DateKit;
 [TestFixture]
 public partial class DateTests
 {
-	private static readonly TimeSpan OneDay = TimeSpan.FromTicks(TimeSpan.TicksPerDay);
+	private const String EmptyDateExceptionMessage = "Operation is not supported by the default (empty) Date.";
+
+	private static readonly TimeSpan s_oneDay = TimeSpan.FromTicks(TimeSpan.TicksPerDay);
 
 	#region Constructor
 
@@ -83,7 +85,7 @@ public partial class DateTests
 		Func<Int32> func = () => date.DayNumber;
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(1, 1, 1, 0)]
@@ -117,7 +119,7 @@ public partial class DateTests
 		Func<DayOfWeek> func = () => date.DayOfWeek;
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(1, 1, 1, DayOfWeek.Monday)]
@@ -152,7 +154,7 @@ public partial class DateTests
 		Func<Int32> func = () => date.DayOfYear;
 
 		// Assert:
-		func.Should().Throw<InvalidOperationException>();
+		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
 	[TestCase(2000, 1, 1, 1)]
@@ -211,22 +213,20 @@ public partial class DateTests
 		while (true)
 		{
 			// Act:
-			Date date = Date.FromDateTime(dateTime);
-			Int32 actualDayNumber = date.DayNumber;
-			DayOfWeek actualDayOfWeek = date.DayOfWeek;
-			Int32 actualDayOfYear = date.DayOfYear;
+			Date actualDate = Date.FromDateTime(dateTime);
+			Int32 actualDayNumber = actualDate.DayNumber;
+			DayOfWeek actualDayOfWeek = actualDate.DayOfWeek;
+			Int32 actualDayOfYear = actualDate.DayOfYear;
 
 			// Assert:
-			date.Year.Should().Be(dateTime.Year);
-			date.Month.Should().Be(dateTime.Month);
-			date.Day.Should().Be(dateTime.Day);
+			actualDate.Should().HaveSameComponentsAs(dateTime);
 			actualDayNumber.Should().Be(expectedDayNumber);
 			actualDayOfWeek.Should().Be(dateTime.DayOfWeek);
 			actualDayOfYear.Should().Be(dateTime.DayOfYear);
 
 			if (dateTime == maxValue)
 				break;
-			dateTime += OneDay;
+			dateTime += s_oneDay;
 			++expectedDayNumber;
 		}
 	}

@@ -2,7 +2,7 @@ using System;
 
 namespace DateKit;
 
-partial struct Date
+partial struct Date : IComparable, IComparable<Date>, IEquatable<Date>
 {
 	/// <summary>
 	/// Compares two <see cref="Date" /> instances and returns a signed integer that indicates their relative order.
@@ -83,7 +83,9 @@ partial struct Date
 	/// </item>
 	/// </list>
 	/// </returns>
+#pragma warning disable CA1725 // Parameter names should match base declaration (obj)
 	public Int32 CompareTo(Date date)
+#pragma warning restore CA1725
 	{
 		return Compare(this, date);
 	}
@@ -92,12 +94,12 @@ partial struct Date
 	/// Compares this instance to a specified object, which must be a boxed <see cref="Date" />,
 	/// and returns a signed integer that indicates their relative order.
 	/// </summary>
-	/// <param name="value">
+	/// <param name="obj">
 	/// The boxed <see cref="Date" /> to compare to this instance, or <see langword="null" />.
 	/// </param>
 	/// <returns>
 	/// <para>
-	/// A signed integer that indicates the relative order of this instance and <paramref name="value" />.
+	/// A signed integer that indicates the relative order of this instance and <paramref name="obj" />.
 	/// </para>
 	/// <list type="table">
 	/// <listheader>
@@ -107,38 +109,38 @@ partial struct Date
 	/// <item>
 	/// <term>Less than zero</term>
 	/// <description>
-	/// This instance is less (earlier) than <paramref name="value" />.
+	/// This instance is less (earlier) than <paramref name="obj" />.
 	/// </description>
 	/// </item>
 	/// <item>
 	/// <term>Zero</term>
 	/// <description>
-	/// This instance is equal to <paramref name="value" />.
+	/// This instance is equal to <paramref name="obj" />.
 	/// </description>
 	/// </item>
 	/// <item>
 	/// <term>Greater than zero</term>
 	/// <description>
-	/// This instance is greater (later) than <paramref name="value" />,
-	/// or <paramref name="value" /> is <see langword="null" />.
+	/// This instance is greater (later) than <paramref name="obj" />,
+	/// or <paramref name="obj" /> is <see langword="null" />.
 	/// </description>
 	/// </item>
 	/// </list>
 	/// </returns>
 	/// <exception cref="ArgumentException">
-	/// <paramref name="value" /> is not a boxed <see cref="Date" />.
+	/// <paramref name="obj" /> is not a boxed <see cref="Date" />.
 	/// </exception>
 	/// <remarks>
 	/// Any instance of <see cref="Date" /> is considered greater than <see langword="null" />.
 	/// </remarks>
-	public Int32 CompareTo(Object? value)
+	public Int32 CompareTo(Object? obj)
 	{
 		return
-			value switch
+			obj switch
 			{
 				null => 1,
 				Date date => Compare(this, date),
-				_ => throw new ArgumentException("Object must be of type Date.", nameof(value)),
+				_ => throw new ArgumentException("Object must be of type Date.", nameof(obj)),
 			};
 	}
 

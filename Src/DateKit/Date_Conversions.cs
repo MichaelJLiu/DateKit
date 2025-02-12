@@ -1,12 +1,12 @@
 using System;
 using System.Diagnostics;
-#if NET7_0_OR_GREATER // for StringSyntaxAttribute
-using System.Diagnostics.CodeAnalysis;
+#if NET7_0_OR_GREATER
+using StringSyntaxAttribute = System.Diagnostics.CodeAnalysis.StringSyntaxAttribute;
 #endif
 
 namespace DateKit;
 
-partial struct Date
+partial struct Date : IFormattable
 {
 #if NET6_0_OR_GREATER
 	/// <summary>
@@ -20,7 +20,7 @@ partial struct Date
 	/// </returns>
 	public static Date FromDateOnly(DateOnly dateOnly)
 	{
-		return UnsafeFromDayNumber((UInt32)dateOnly.DayNumber);
+		return UncheckedFromDayNumber(dateOnly.DayNumber);
 	}
 #endif // #if NET6_0_OR_GREATER
 
@@ -35,7 +35,7 @@ partial struct Date
 	/// </returns>
 	public static Date FromDateTime(DateTime dateTime)
 	{
-		return UnsafeFromDayNumber((UInt32)((UInt64)dateTime.Ticks / TimeSpan.TicksPerDay));
+		return UncheckedFromDayNumber((Int32)((UInt64)dateTime.Ticks / TimeSpan.TicksPerDay));
 	}
 
 	/// <summary>
@@ -53,50 +53,50 @@ partial struct Date
 	public static Date FromDayNumber(Int32 dayNumber)
 	{
 		// Unoptimized:
-		//   if (dayNumber < Date.MinDayNumber || dayNumber > Date.MaxDayNumber)
+		//   if (dayNumber < MinDayNumber || dayNumber > MaxDayNumber)
 		// Optimized:
-		if (unchecked((UInt32)(dayNumber - Date.MinDayNumber)) > Date.MaxDayNumber - Date.MinDayNumber)
+		if (unchecked((UInt32)(dayNumber - MinDayNumber)) > MaxDayNumber - MinDayNumber)
 			ThrowHelper.ThrowArgumentOutOfRangeException(dayNumber, ExceptionArgument.dayNumber);
-		return UnsafeFromDayNumber((UInt32)dayNumber);
+		return UncheckedFromDayNumber(dayNumber);
 	}
 
 	// This method is equivalent to FromDayNumber but does not validate its argument.
 	// The implementation is based on the paper "Euclidean affine functions and applications to calendar algorithms"
 	// by Cassio Neri and Lorenz Schneider (https://arxiv.org/pdf/2102.06959.pdf).
-	private static Date UnsafeFromDayNumber(UInt32 dayNumber)
+	private static Date UncheckedFromDayNumber(Int32 dayNumber)
 	{
 		// ReSharper disable once ConditionIsAlwaysTrueOrFalse
 		Debug.Assert(dayNumber >= MinDayNumber);
 		Debug.Assert(dayNumber <= MaxDayNumber);
 
 		// Move the epoch from January 1, 0001, to March 1, 0000:
-		dayNumber += DaysPerYear - 31 - 28; // excluding January and February
+		dayNumber += DaysPerYear - DaysInJanuary - DaysInFebruary;
 
-		UInt32 n1 = dayNumber * 4 + 3;
-		UInt32 century = n1 / DaysPer400Years;
-		UInt32 n2 = (n1 - century * DaysPer400Years) | 3; // day of century * 4 + 3
+		Int32 n1 = dayNumber * 4 + 3;
+		Int32 century = (Int32)((UInt32)n1 / DaysPer400Years);
+		Int32 n2 = (n1 - century * DaysPer400Years) | 3; // day of century * 4 + 3
 
 		// Unoptimized:
-		//   UInt32 yearOfCentury = n2 / DaysPer4Years;
-		//   UInt32 daysSinceMarch1 = n2 % DaysPer4Years / 4;
+		//   Int32 yearOfCentury = n2 / DaysPer4Years;
+		//   Int32 daysSinceMarch1 = n2 % DaysPer4Years / 4;
 		// Optimized:
-		const UInt32 multiplier2 = (UInt32)((1UL << 32) / DaysPer4Years + 1);
-		UInt64 u2 = (UInt64)n2 * multiplier2;
-		UInt32 yearOfCentury = (UInt32)(u2 >> 32);
-		UInt32 daysSinceMarch1 = unchecked((UInt32)u2) / (multiplier2 * 4);
+		const Int32 multiplier2 = (Int32)((1L << 32) / DaysPer4Years) + 1;
+		Int64 u2 = (Int64)(UInt32)n2 * multiplier2;
+		Int32 yearOfCentury = (Int32)(u2 >>> 32);
+		Int32 daysSinceMarch1 = (Int32)(unchecked((UInt32)u2) / (multiplier2 * 4));
 
-		UInt32 year = century * 100 + yearOfCentury;
+		Int32 year = century * YearsPerCentury + yearOfCentury;
 
 		// Unoptimized:
-		//   UInt32 n3 = daysSinceMarch1 * 5 + 461;
-		//   UInt32 month = n3 / 153;
-		//   UInt32 day = n3 % 153 / 5;
-		// Optimized (valid for daysSinceMarch1 in [0, 733]):
+		//   Int32 n3 = daysSinceMarch1 * 5 + 461;
+		//   Int32 month = n3 / 153;
+		//   Int32 day = n3 % 153 / 5 + 1;
+		// Optimized (valid for daysSinceMarch1 in [0..733]):
 		const Int32 shift3 = 16;
-		const UInt32 multiplier3 = (1 << shift3) * 5 / 153;
-		UInt32 n3 = daysSinceMarch1 * multiplier3 + 197913;
-		UInt32 month = n3 >> shift3; // [3..14]
-		UInt32 day = n3 % (1 << shift3) / multiplier3; // [0..30]
+		const Int32 multiplier3 = (1 << shift3) * 5 / 153;
+		Int32 n3 = daysSinceMarch1 * multiplier3 + 197913;
+		Int32 month = n3 >>> shift3; // [3..14]
+		Int32 day = (Int32)((UInt32)n3 % (1 << shift3) / multiplier3) + 1; // [1..31]
 
 		// Move January and February to the beginning of the next year:
 		if (month > December)
@@ -105,7 +105,7 @@ partial struct Date
 			month -= MonthsPerYear;
 		}
 
-		return UnsafeCreate((Int32)year, (Int32)month, (Int32)(day + 1));
+		return UncheckedCreate(year, month, day);
 	}
 
 	/// <summary>
@@ -191,7 +191,9 @@ partial struct Date
 	/// </returns>
 	public override String ToString()
 	{
+#pragma warning disable CA1305 // Specify IFormatProvider
 		return this.ToString(format: null);
+#pragma warning restore CA1305
 	}
 
 	/// <summary>
@@ -222,7 +224,9 @@ partial struct Date
 		[StringSyntax(StringSyntaxAttribute.DateOnlyFormat)]
 #endif
 		String? format,
+#pragma warning disable CA1725 // Parameter names should match base declaration (formatProvider)
 		IFormatProvider? provider = null)
+#pragma warning restore CA1725
 	{
 		return DatePattern.Create(format, provider).Format(this);
 	}

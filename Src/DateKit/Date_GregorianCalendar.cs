@@ -6,6 +6,8 @@ namespace DateKit;
 
 partial struct Date
 {
+	internal const Int32 YearsPerCentury = 100;
+
 	/// <summary>
 	/// Represents the number of months in a year.
 	/// </summary>
@@ -32,6 +34,11 @@ partial struct Date
 
 	internal const Int32 MinDaysPerMonth = 28;
 	internal const Int32 MaxDaysPerMonth = 31;
+
+	private const Int32 DaysInJanuary = 31;
+	private const Int32 DaysInFebruary = 28;
+	private const Int32 LeapDay = 29;
+	private const Int32 DaysInDecember = 31;
 
 	/// <summary>
 	/// Represents the number of days in a week.
@@ -67,17 +74,19 @@ partial struct Date
 	private static YearDataArray CreateYearData()
 	{
 		YearDataArray data = new();
-		Int32 daysInPreviousYears = -(DaysPerYear - 31 - 28 + 1); // January 1, 0001, to March 1, 0000, minus one
+		Int32 daysInPreviousYears =
+			-(DaysPerYear - DaysInJanuary - DaysInFebruary + 1); // January 1, 0001, to March 1, 0000, minus one
 		Int32 firstDayOfWeek = 0; // Monday, January 1, 0001, minus one
 		data[0].DaysInPreviousYears = daysInPreviousYears;
 
 		for (Int32 year = 1; year <= MaxYear; ++year)
 		{
-			Boolean isLeapYear = UnsafeIsLeapYear(year);
+			Boolean isLeapYear = UncheckedIsLeapYear(year);
 
 			daysInPreviousYears += DaysPerYear + (isLeapYear ? 1 : 0);
 			data[year].DaysInPreviousYears = daysInPreviousYears;
-			data[year].DayOfWeekMonthDataOffset = (Byte)((firstDayOfWeek + (isLeapYear ? DaysPerWeek : 0)) * 12);
+			data[year].DayOfWeekMonthDataOffset =
+				(Byte)((firstDayOfWeek + (isLeapYear ? DaysPerWeek : 0)) * MonthsPerYear);
 
 			firstDayOfWeek += 1 + (isLeapYear ? 1 : 0);
 			if (firstDayOfWeek >= DaysPerWeek)
@@ -107,17 +116,17 @@ partial struct Date
 			5, 1, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4,
 			6, 2, 3, 6, 1, 4, 6, 2, 5, 0, 3, 5,
 		];
-#endif
+#endif // #if NET8_0_OR_GREATER && DATEKIT_LOOKUP_TABLES
 
 	// This method is equivalent to DayOfWeek but does not validate its arguments.
-	internal static DayOfWeek UnsafeDayOfWeek(Int32 year, Int32 month, Int32 day)
+	internal static DayOfWeek UncheckedDayOfWeek(Int32 year, Int32 month, Int32 day)
 	{
 		Debug.Assert(year >= 1);
 		Debug.Assert(year <= MaxYear);
 		Debug.Assert(month >= January);
 		Debug.Assert(month <= December);
 		Debug.Assert(day >= 1);
-		Debug.Assert(day <= UnsafeDaysInMonth(year, month));
+		Debug.Assert(day <= UncheckedDaysInMonth(year, month));
 
 		Int32 sum = day;
 
@@ -125,7 +134,7 @@ partial struct Date
 		sum += DayOfWeekMonthData[s_yearData[year].DayOfWeekMonthDataOffset + month];
 		// Unoptimized:
 		//   Int32 dayOfWeek = sum % DaysPerWeek;
-		// Optimized (valid for sum in [0, 85]; 8 is minimum shift count that encompasses [1, 6 + 31]):
+		// Optimized (valid for sum in [0..85]; 8 is minimum shift count that encompasses [1..(6 + 31)]):
 		const Int32 shift = 8;
 		const Int32 multiplier = (1 << shift) / DaysPerWeek + 1;
 #else
@@ -141,11 +150,11 @@ partial struct Date
 		sum += -century + (century >>> 2);
 		// Unoptimized:
 		//   Int32 dayOfWeek = sum % DaysPerWeek;
-		// Optimized (valid for sum in [0, 13107]):
+		// Optimized (valid for sum in [0..13107]):
 		const Int32 shift = 16;
 		const Int32 multiplier = (1 << shift) / DaysPerWeek + 1;
 #endif
-		Int32 dayOfWeek = (Int32)((UInt32)sum * multiplier % (1 << shift) * DaysPerWeek >>> shift);
+		Int32 dayOfWeek = (Int32)(((UInt32)sum * multiplier % (1 << shift) * DaysPerWeek) >>> shift);
 		return (DayOfWeek)dayOfWeek;
 	}
 
@@ -177,11 +186,11 @@ partial struct Date
 	{
 		ThrowHelper.ThrowIfYearArgumentIsOutOfRange(year, ExceptionArgument.year);
 		ThrowHelper.ThrowIfMonthArgumentIsOutOfRange(month, ExceptionArgument.month);
-		return UnsafeDaysInMonth(year, month);
+		return UncheckedDaysInMonth(year, month);
 	}
 
 	// This method is equivalent to DaysInMonth but does not validate its arguments.
-	internal static Int32 UnsafeDaysInMonth(Int32 year, Int32 month)
+	internal static Int32 UncheckedDaysInMonth(Int32 year, Int32 month)
 	{
 		Debug.Assert(year >= 1);
 		Debug.Assert(month >= January);
@@ -189,7 +198,7 @@ partial struct Date
 
 		return month != February
 			? ((month >>> 3) ^ month) | 30
-			: UnsafeIsLeapYear(year) ? 29 : 28;
+			: UncheckedIsLeapYear(year) ? LeapDay : DaysInFebruary;
 
 		// month               | (month >> 3) ^ month | ... OR 0b1110
 		// ------------------- | -------------------- | -------------
@@ -220,10 +229,10 @@ partial struct Date
 #else
 		// Calculate the number of days between March 1, 0000, and March 1 of the specified year:
 		Int32 century = GetCentury(year);
-		Int32 daysInPreviousYears = (year * DaysPer4Years >>> 2) - century + (century >>> 2);
+		Int32 daysInPreviousYears = ((year * DaysPer4Years) >>> 2) - century + (century >>> 2);
 
 		// Move the epoch from March 1, 0000, to January 1, 0001, and subtract one:
-		return daysInPreviousYears - (DaysPerYear - 31 - 28 + 1);
+		return daysInPreviousYears - (DaysPerYear - DaysInJanuary - DaysInFebruary + 1);
 #endif
 	}
 
@@ -246,19 +255,19 @@ partial struct Date
 	public static Boolean IsLeapYear(Int32 year)
 	{
 		ThrowHelper.ThrowIfYearArgumentIsOutOfRange(year, ExceptionArgument.year);
-		return UnsafeIsLeapYear(year);
+		return UncheckedIsLeapYear(year);
 	}
 
 	// This method is equivalent to IsLeapYear but does not validate its arguments.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal static Boolean UnsafeIsLeapYear(Int32 year)
+	internal static Boolean UncheckedIsLeapYear(Int32 year)
 	{
 		Debug.Assert(year >= 1);
 
 		UInt32 unsignedYear = (UInt32)year;
 
 		// If the year is not divisible by 4, it is not a leap year:
-		if (unsignedYear % 4 != 0) 
+		if (unsignedYear % 4 != 0)
 			return false;
 
 		// If the year is divisible by 16 (including 400 but excluding 100), it is a leap year:
@@ -270,7 +279,7 @@ partial struct Date
 		const Int32 divisor = 25;
 		// Unoptimized:
 		//   return unsignedYear % divisor != 0;
-		// Optimized (valid for year in [0, 43690]; 17 is minimum shift count that encompasses [0, 9999]):
+		// Optimized (valid for year in [0..43690]; 17 is minimum shift count that encompasses [0..9999]):
 		const Int32 shift = 17;
 		const Int32 multiplier = (1 << shift) / divisor + 1;
 		return unsignedYear * multiplier % (1 << shift) >= multiplier;
@@ -281,13 +290,12 @@ partial struct Date
 	{
 		Debug.Assert(year >= 0);
 
-		const Int32 divisor = 100;
 		// Unoptimized:
-		//   return year / divisor;
-		// Optimized (valid for year in [0, 43698]; 19 is minimum shift count that encompasses [0, 9999]):
+		//   return year / YearsPerCentury;
+		// Optimized (valid for year in [0..43698]; 19 is minimum shift count that encompasses [0..9999]):
 		const Int32 shift = 19;
-		const Int32 multiplier = (1 << shift) / divisor + 1;
-		return year * multiplier >>> shift;
+		const Int32 multiplier = (1 << shift) / YearsPerCentury + 1;
+		return (year * multiplier) >>> shift;
 	}
 
 	// Divides a specified year by 100 and returns the remainder.
@@ -295,12 +303,11 @@ partial struct Date
 	{
 		Debug.Assert(year >= 0);
 
-		const Int32 divisor = 100;
 		// Unoptimized:
-		//   return year % divisor;
-		// Optimized (valid for year in [0, 43698]; 19 is minimum shift count that encompasses [0, 9999]):
+		//   return year % YearsPerCentury;
+		// Optimized (valid for year in [0..43698]; 19 is minimum shift count that encompasses [0..9999]):
 		const Int32 shift = 19;
-		const Int32 multiplier = (1 << shift) / divisor + 1;
-		return (Int32)((UInt32)year * multiplier % (1 << shift) * divisor >>> shift);
+		const Int32 multiplier = (1 << shift) / YearsPerCentury + 1;
+		return (Int32)(((UInt32)year * multiplier % (1 << shift) * YearsPerCentury) >>> shift);
 	}
 }

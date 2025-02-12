@@ -7,6 +7,11 @@
     <DefineConstants>$(DefineConstants);DATEKIT_LOOKUP_TABLES</DefineConstants>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
 
+    <!-- Code Analysis -->
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">True</IsAotCompatible>
+
     <!-- Packaging -->
     <VersionPrefix>1.0.1</VersionPrefix>
     <Authors>Michael J. Liu</Authors>
@@ -21,7 +26,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 

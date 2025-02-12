@@ -11,8 +11,10 @@ namespace DateKit;
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 [TypeConverter(typeof(DateConverter))]
-[DebuggerDisplay($"\\{{{{{nameof(DebuggerDisplay)},nq}}\\}}")]
-public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable<Date>, IFormattable
+[DebuggerDisplay($@"\{{{{{nameof(DebuggerDisplay)},nq}}\}}")]
+#pragma warning disable CA1716 // Identifiers should not match keywords (Date)
+public readonly partial struct Date
+#pragma warning restore CA1716
 {
 	#region Constants
 
@@ -78,7 +80,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// <value>
 	/// The <see cref="Date" /> that represents January 1, 0001.
 	/// </value>
-	public static Date MinValue => UnsafeCreate(MinYear, January, 1);
+	public static Date MinValue => UncheckedCreate(MinYear, January, day: 1);
 
 	/// <summary>
 	/// Gets the latest possible <see cref="Date" />.
@@ -86,12 +88,74 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// <value>
 	/// The <see cref="Date" /> that represents December 31, 9999.
 	/// </value>
-	public static Date MaxValue => UnsafeCreate(MaxYear, December, 31);
+	public static Date MaxValue => UncheckedCreate(MaxYear, December, day: DaysInDecember);
 
 	internal const Int32 MinDayNumber = 0; // MinValue.DayNumber
 	internal const Int32 MaxDayNumber = 3652058; // MaxValue.DayNumber
 
 	#endregion Constants
+
+	#region Packed Values
+
+	private const Int32 YearShift = 16;
+	private const Int32 MonthShift = 8;
+	// YearShift and MonthShift must satisfy the following criteria:
+	// 1. MonthShift >= 6 so that AddSmallNegativeDays/AddSmallPositiveDays can store day values in
+	//    [(1 - 28)..(31 + 28)].
+	// 2. YearShift >= MonthShift + 4 to store month values in [1..12].
+	// 3. YearShift <= 32 - 15 = 17 so that AddYears can store year values in [(1 - 9998)..(9999 + 9998)].
+
+	private static Int32 PackYear(Int32 year)
+	{
+		return year << YearShift;
+	}
+
+	private static Int32 PackMonth(Int32 month)
+	{
+		return month << MonthShift;
+	}
+
+	private static Int32 PackYearMonthDay(Int32 year, Int32 month, Int32 day)
+	{
+		return PackYear(year) | PackMonth(month) | day;
+	}
+
+	private static Int32 PackMonthDay(Int32 month, Int32 day)
+	{
+		return PackMonth(month) | day;
+	}
+
+	private static Int32 UnpackYear(Int32 packedValue)
+	{
+		return packedValue >>> YearShift;
+	}
+
+	private static Int32 UnpackMonth(Int32 packedValue)
+	{
+		const Int32 mask = (1 << (YearShift - MonthShift)) - 1;
+		return (packedValue >>> MonthShift) & mask;
+	}
+
+	private static Int32 UnpackDay(Int32 packedValue)
+	{
+		const Int32 mask = (1 << MonthShift) - 1;
+		return packedValue & mask;
+	}
+
+	private static Int32 UnpackSignedDay(Int32 packedValue)
+	{
+		return MonthShift >= 8
+			? unchecked((SByte)packedValue)
+			: (packedValue << (32 - MonthShift)) >> (32 - MonthShift);
+	}
+
+	private static Int32 ExtractMonthDay(Int32 packedValue)
+	{
+		const Int32 mask = (1 << YearShift) - 1;
+		return packedValue & mask;
+	}
+
+	#endregion Packed Values
 
 	#region Fields
 
@@ -99,6 +163,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	[FieldOffset(2)] private readonly UInt16 _year;
 	[FieldOffset(1)] private readonly Byte _month;
 	[FieldOffset(0)] private readonly Byte _day;
+
 	// The field offsets depend on the architecture:
 	//
 	// Architecture  |  0  |  1  |  2  |  3  |
@@ -149,20 +214,20 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 		//   _month = (Byte)month;
 		//   _day = (Byte)day;
 		// Optimized:
-		_packedValue = year << 16 | month << 8 | day;
+		_packedValue = PackYearMonthDay(year, month, day);
 	}
 
 	// This method is equivalent to Date(Int32, Int32, Int32) but does not validate its arguments.
-	internal static Date UnsafeCreate(Int32 year, Int32 month, Int32 day)
+	internal static Date UncheckedCreate(Int32 year, Int32 month, Int32 day)
 	{
 		Debug.Assert(year >= MinYear);
 		Debug.Assert(year <= MaxYear);
 		Debug.Assert(month >= January);
 		Debug.Assert(month <= December);
 		Debug.Assert(day >= 1);
-		Debug.Assert(day <= UnsafeDaysInMonth(year, month));
+		Debug.Assert(day <= UncheckedDaysInMonth(year, month));
 
-		return new Date(year << 16 | month << 8 | day);
+		return new Date(PackYearMonthDay(year, month, day));
 	}
 
 	private Date(Int32 packedValue)
@@ -170,12 +235,12 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	{
 		_packedValue = packedValue;
 
-		Debug.Assert(_year >= MinYear);
-		Debug.Assert(_year <= MaxYear);
-		Debug.Assert(_month >= January);
-		Debug.Assert(_month <= December);
-		Debug.Assert(_day >= 1);
-		Debug.Assert(_day <= UnsafeDaysInMonth(_year, _month));
+		Debug.Assert(this.Year >= MinYear);
+		Debug.Assert(this.Year <= MaxYear);
+		Debug.Assert(this.Month >= January);
+		Debug.Assert(this.Month <= December);
+		Debug.Assert(this.Day >= 1);
+		Debug.Assert(this.Day <= UncheckedDaysInMonth(this.Year, this.Month));
 	}
 
 	/// <summary>
@@ -193,9 +258,9 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	[EditorBrowsable(EditorBrowsableState.Never)]
 	public void Deconstruct(out Int32 year, out Int32 month, out Int32 day)
 	{
-		year = _year;
-		month = _month;
-		day = _day;
+		year = this.Year;
+		month = this.Month;
+		day = this.Day;
 	}
 
 	#endregion Constructors
@@ -209,7 +274,9 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// An integer between <see cref="MinYear" /> and <see cref="MaxYear" /> that specifies the year of the date,
 	/// or zero if this instance is <see cref="Empty" />.
 	/// </value>
-	public Int32 Year => _year;
+#pragma warning disable CA1508 // Avoid dead conditional code
+	public Int32 Year => YearShift == 16 ? _year : UnpackYear(_packedValue);
+#pragma warning restore CA1508
 
 	/// <summary>
 	/// Gets the month component of the date.
@@ -218,7 +285,9 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// An integer between 1 and 12 that specifies the month of the date,
 	/// or zero if this instance is <see cref="Empty" />.
 	/// </value>
-	public Int32 Month => _month;
+#pragma warning disable CA1508 // Avoid dead conditional code
+	public Int32 Month => MonthShift == 8 && YearShift >= 16 ? _month : UnpackMonth(_packedValue);
+#pragma warning restore CA1508
 
 	/// <summary>
 	/// Gets the day component of the date.
@@ -227,7 +296,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	/// An integer between 1 and 31 that specifies the day of the month of the date,
 	/// or zero if this instance is <see cref="Empty" />.
 	/// </value>
-	public Int32 Day => _day;
+	public Int32 Day => MonthShift >= 8 ? _day : UnpackDay(_packedValue);
 
 	/// <summary>
 	/// Gets the day number of the date.
@@ -242,10 +311,10 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	{
 		get
 		{
-			Int32 year = _year;
+			Int32 year = this.Year;
 			if (year == 0)
 				ThrowHelper.ThrowEmptyDateInvalidOperationException();
-			Int32 month = _month;
+			Int32 month = this.Month;
 
 			// Move January and February to the end of the previous year as months 13 and 14:
 			if (month <= February)
@@ -254,7 +323,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 				month += MonthsPerYear;
 			}
 
-			return GetDaysInPreviousYears(year) + GetDaysInPreviousMonths(month) + _day;
+			return GetDaysInPreviousYears(year) + GetDaysInPreviousMonths(month) + this.Day;
 		}
 	}
 
@@ -271,10 +340,10 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	{
 		get
 		{
-			Int32 year = _year;
+			Int32 year = this.Year;
 			if (year == 0)
 				ThrowHelper.ThrowEmptyDateInvalidOperationException();
-			return UnsafeDayOfWeek(year, _month, _day);
+			return UncheckedDayOfWeek(year, this.Month, this.Day);
 		}
 	}
 
@@ -291,7 +360,7 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 	{
 		get
 		{
-			Int32 month = _month;
+			Int32 month = this.Month;
 			if (month == 0)
 				ThrowHelper.ThrowEmptyDateInvalidOperationException();
 			Int32 daysInPreviousMonths;
@@ -305,15 +374,15 @@ public readonly partial struct Date : IComparable, IComparable<Date>, IEquatable
 			{
 				// Map (3, 4, ..., 12) to (59, 90, ..., 334):
 				daysInPreviousMonths = (month * 979 - 1030) >>> 5;
-				if (UnsafeIsLeapYear(_year))
+				if (UncheckedIsLeapYear(this.Year))
 					++daysInPreviousMonths; // Insert leap day.
 			}
 
-			return daysInPreviousMonths + _day;
+			return daysInPreviousMonths + this.Day;
 		}
 	}
 
-	private String DebuggerDisplay => $"{_year:D4}-{_month:D2}-{_day:D2}";
+	private String DebuggerDisplay => $"{this.Year:D4}-{this.Month:D2}-{this.Day:D2}";
 
 	#endregion Properties
 }

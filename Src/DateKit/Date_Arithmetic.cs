@@ -38,14 +38,14 @@ partial struct Date
 		if (unchecked((UInt32)(number + maxNumber)) > maxNumber * 2)
 			ThrowHelper.ThrowOverflowException();
 
-		packedValue += number << 16;
-		Int32 year = packedValue >>> 16;
+		packedValue += PackYear(number);
+		Int32 year = UnpackYear(packedValue);
 		// Unoptimized:
 		//   if (year < MinYear || year > MaxYear)
 		// Optimized:
 		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
 			ThrowHelper.ThrowOverflowException();
-		if (unchecked((Int16)packedValue) == (February << 8 | 29) && !UnsafeIsLeapYear(year))
+		if (ExtractMonthDay(packedValue) == PackMonthDay(February, LeapDay) && !UncheckedIsLeapYear(year))
 			--packedValue;
 		return new Date(packedValue);
 	}
@@ -97,12 +97,12 @@ partial struct Date
 
 		if (day > MinDaysPerMonth)
 		{
-			Int32 daysInMonth = UnsafeDaysInMonth(year, month);
+			Int32 daysInMonth = UncheckedDaysInMonth(year, month);
 			if (day > daysInMonth)
 				day = daysInMonth;
 		}
 
-		return UnsafeCreate(year, month, day);
+		return UncheckedCreate(year, month, day);
 	}
 
 	/// <summary>
@@ -147,28 +147,30 @@ partial struct Date
 			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		packedValue += number;
-		Int32 day = unchecked((SByte)packedValue);
+		Int32 day = UnpackSignedDay(packedValue);
 
 		if (day <= 0)
 		{
-			Int32 year = packedValue >>> 16;
-			Int32 month = unchecked((Byte)((packedValue - 1) >>> 8));
+			Int32 year = UnpackYear(packedValue);
+			Int32 month = UnpackMonth(packedValue - 1); // subtract one day to ensure month rollover
 
 			if (month >= January)
 			{
 				packedValue = packedValue
-					- (1 << 8) // decrement month
-					+ UnsafeDaysInMonth(year, month);
+					- PackMonth(1) // decrement month
+					+ UncheckedDaysInMonth(year, month);
 			}
 			else if (year > MinYear)
 			{
 				packedValue = packedValue
-					- (1 << 16) // decrement year
-					+ (December << 8) - (January << 8) // reset month
-					+ 31; // days in December
+					- PackYear(1) // decrement year
+					+ PackMonth(December) - PackMonth(January) // change month from January to December
+					+ DaysInDecember;
 			}
 			else
+			{
 				ThrowHelper.ThrowOverflowException();
+			}
 		}
 
 		return new Date(packedValue);
@@ -191,7 +193,9 @@ partial struct Date
 			while (day <= 0)
 			{
 				if (month > January)
+				{
 					--month;
+				}
 				else
 				{
 					if (year > MinYear)
@@ -202,16 +206,16 @@ partial struct Date
 					month = December;
 				}
 
-				day += UnsafeDaysInMonth(year, month);
+				day += UncheckedDaysInMonth(year, month);
 			}
 
-			return UnsafeCreate(year, month, day);
+			return UncheckedCreate(year, month, day);
 		}
 
 		Int32 dayNumber = date.DayNumber + number;
 		if (dayNumber < MinDayNumber)
 			ThrowHelper.ThrowOverflowException();
-		return UnsafeFromDayNumber((UInt32)dayNumber);
+		return UncheckedFromDayNumber(dayNumber);
 	}
 
 	private static Date AddSmallPositiveDays(Date date, Int32 number)
@@ -224,23 +228,32 @@ partial struct Date
 			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
 		packedValue += number;
-		Int32 day = unchecked((Byte)packedValue);
+		Int32 day = UnpackDay(packedValue);
 
 		if (day > MinDaysPerMonth)
 		{
-			Int32 year = packedValue >>> 16;
-			Int32 month = unchecked((Byte)(packedValue >>> 8));
-			Int32 daysInMonth = UnsafeDaysInMonth(year, month);
+			Int32 year = UnpackYear(packedValue);
+			Int32 month = UnpackMonth(packedValue);
+			Int32 daysInMonth = UncheckedDaysInMonth(year, month);
 
 			if (day > daysInMonth)
 			{
 				packedValue -= daysInMonth;
+
 				if (month < December)
-					packedValue += 1 << 8; // increment month
+				{
+					packedValue += PackMonth(1); // increment month
+				}
 				else if (year < MaxYear)
-					packedValue += (1 << 16) + (January << 8) - (December << 8); // increment year and reset month
+				{
+					packedValue = packedValue
+						+ PackYear(1) // increment year
+						+ PackMonth(January) - PackMonth(December); // change month from December to January
+				}
 				else
+				{
 					ThrowHelper.ThrowOverflowException();
+				}
 			}
 		}
 
@@ -263,12 +276,14 @@ partial struct Date
 		{
 			while (day > MinDaysPerMonth)
 			{
-				Int32 daysInMonth = UnsafeDaysInMonth(year, month);
+				Int32 daysInMonth = UncheckedDaysInMonth(year, month);
 				if (day <= daysInMonth)
 					break;
 
 				if (month < December)
+				{
 					++month;
+				}
 				else
 				{
 					if (year < MaxYear)
@@ -282,13 +297,13 @@ partial struct Date
 				day -= daysInMonth;
 			}
 
-			return UnsafeCreate(year, month, day);
+			return UncheckedCreate(year, month, day);
 		}
 
 		Int32 dayNumber = date.DayNumber + number;
 		if (dayNumber > MaxDayNumber)
 			ThrowHelper.ThrowOverflowException();
-		return UnsafeFromDayNumber((UInt32)dayNumber);
+		return UncheckedFromDayNumber(dayNumber);
 	}
 
 	/// <summary>
@@ -349,7 +364,7 @@ partial struct Date
 		// Optimized:
 		if (unchecked((UInt32)(result + MaxDaysPerMonth)) > MaxDaysPerMonth * 2)
 		{
-			result = unchecked((SByte)result);
+			result = UnpackSignedDay(result);
 
 			Int32 year1 = date1.Year;
 			Int32 year2 = date2.Year;
@@ -394,9 +409,11 @@ partial struct Date
 	/// <exception cref="OverflowException">
 	/// The resulting <see cref="Date" /> is less than <see cref="MinValue" />.
 	/// </exception>
+#pragma warning disable CA2225 // Operator overloads have named alternates (Decrement)
 	public static Date operator --(Date date)
+#pragma warning restore CA2225
 	{
-		return AddSmallNegativeDays(date, -1);
+		return AddSmallNegativeDays(date, number: -1);
 	}
 
 	/// <summary>
@@ -414,9 +431,11 @@ partial struct Date
 	/// <exception cref="OverflowException">
 	/// The resulting <see cref="Date" /> is greater than <see cref="MaxValue" />.
 	/// </exception>
+#pragma warning disable CA2225 // Operator overloads have named alternates (Increment)
 	public static Date operator ++(Date date)
+#pragma warning restore CA2225
 	{
-		return AddSmallPositiveDays(date, 1);
+		return AddSmallPositiveDays(date, number: 1);
 	}
 
 	/// <summary>

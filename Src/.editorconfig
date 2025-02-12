@@ -50,3 +50,7 @@ dotnet_diagnostic.IDE0290.severity = none # Use primary constructor
 [*.csproj]
 indent_size = 2
 indent_style = space
+
+[*.DotSettings]
+charset = utf-8-bom
+end_of_line = lf

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace DateKit;
@@ -27,25 +28,43 @@ internal static class ThrowHelper
 		nameof(ExceptionArgument.dayNumber),
 	];
 
+	[DoesNotReturn]
+	public static void ThrowArgumentNullException(String? paramName)
+	{
+		throw new ArgumentNullException(paramName);
+	}
+
 	// Optimization note: This method is generic to avoid boxing the actualValue at call sites.
+	[DoesNotReturn]
 	public static void ThrowArgumentOutOfRangeException<TValue>(TValue actualValue, ExceptionArgument argument)
 	{
 		throw new ArgumentOutOfRangeException(GetParamName(argument), actualValue, message: null);
 	}
 
+	[DoesNotReturn]
 	public static void ThrowEmptyDateArgumentException(ExceptionArgument argument)
 	{
 		throw new ArgumentException("Operation is not supported by the default (empty) Date.", GetParamName(argument));
 	}
 
+	[DoesNotReturn]
 	public static void ThrowEmptyDateInvalidOperationException()
 	{
 		throw new InvalidOperationException("Operation is not supported by the default (empty) Date.");
 	}
 
+	[DoesNotReturn]
 	public static void ThrowOverflowException()
 	{
 		throw new OverflowException("The resulting date exceeds the range of the Date type.");
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void ThrowIfArgumentIsNull(
+		[NotNull] Object? value, [CallerArgumentExpression(nameof(value))] String? paramName = null)
+	{
+		if (value == null)
+			ThrowArgumentNullException(paramName);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,10 +91,10 @@ internal static class ThrowHelper
 	public static void ThrowIfDayArgumentIsOutOfRange(Int32 year, Int32 month, Int32 day, ExceptionArgument argument)
 	{
 		// Unoptimized:
-		//   if (day < 1 || (day > Date.MinDaysPerMonth && day > Date.UnsafeDaysInMonth(year, month)))
+		//   if (day < 1 || (day > Date.MinDaysPerMonth && day > Date.UncheckedDaysInMonth(year, month)))
 		// Optimized:
 		UInt32 dayMinusOne = unchecked((UInt32)(day - 1));
-		if (dayMinusOne >= Date.MinDaysPerMonth && dayMinusOne >= Date.UnsafeDaysInMonth(year, month))
+		if (dayMinusOne >= Date.MinDaysPerMonth && dayMinusOne >= Date.UncheckedDaysInMonth(year, month))
 			ThrowArgumentOutOfRangeException(day, argument);
 	}
 

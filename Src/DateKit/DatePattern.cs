@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if NET7_0_OR_GREATER // for StringSyntaxAttribute
-using System.Diagnostics.CodeAnalysis;
-#endif
 using System.Globalization;
 using System.Linq;
 using System.Text;
+#if NET7_0_OR_GREATER
+using StringSyntaxAttribute = System.Diagnostics.CodeAnalysis.StringSyntaxAttribute;
+#endif
 
 namespace DateKit;
 
@@ -183,7 +183,9 @@ public class DatePattern
 		IFormatProvider? provider = null)
 	{
 		if (String.IsNullOrEmpty(format))
+		{
 			format = "d";
+		}
 		else if (format.Length == 1)
 		{
 			switch (format[0] | 0x20) // lowercase
@@ -460,9 +462,8 @@ public class DatePattern
 	/// </exception>
 	public Date ParseExact(String s)
 	{
-		if (s == null)
-			throw new ArgumentNullException(nameof(s));
-		else if (ParseContext.TryParse(_tokens, s.AsSpan(), out Date date))
+		ThrowHelper.ThrowIfArgumentIsNull(s);
+		if (ParseContext.TryParse(_tokens, s.AsSpan(), out Date date))
 			return date;
 		else
 			throw new FormatException($"'{s}' is not a valid date string.");
@@ -516,7 +517,7 @@ public class DatePattern
 		protected static Dictionary<String, (String, Int32)[]> GetNamesByPrefix(String[] names, Int32 prefixLength)
 		{
 			return names
-				.Where(name => name != "") // Ignore the 13th month.
+				.Where(name => name.Length > 0) // Ignore the 13th month.
 				.Select((name, index) => (name, index))
 				.ToLookup(
 					tuple => tuple.name.Substring(0, prefixLength),
@@ -527,7 +528,7 @@ public class DatePattern
 		}
 	}
 
-	private class DayToken : Token
+	private sealed class DayToken : Token
 	{
 		public static readonly DayToken Instance = new();
 
@@ -547,7 +548,7 @@ public class DatePattern
 		}
 	}
 
-	private class TwoDigitDayToken : Token
+	private sealed class TwoDigitDayToken : Token
 	{
 		public static readonly TwoDigitDayToken Instance = new();
 
@@ -567,7 +568,7 @@ public class DatePattern
 		}
 	}
 
-	private class DayNameToken : Token
+	private sealed class DayNameToken : Token
 	{
 		public static readonly DayNameToken InvariantAbbreviated =
 			new(CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames);
@@ -584,11 +585,11 @@ public class DatePattern
 
 			for (Int32 index = 1; index < dayNames.Length; ++index)
 			{
-				String dayName = dayNames[index];
-				if (dayName.Length < minLength)
-					minLength = dayName.Length;
-				else if (dayName.Length > maxLength)
-					maxLength = dayName.Length;
+				Int32 length = dayNames[index].Length;
+				if (length < minLength)
+					minLength = length;
+				else if (length > maxLength)
+					maxLength = length;
 			}
 
 			this.MinLength = minLength;
@@ -610,7 +611,7 @@ public class DatePattern
 		}
 	}
 
-	private class MonthToken : Token
+	private sealed class MonthToken : Token
 	{
 		public static readonly MonthToken Instance = new();
 
@@ -630,7 +631,7 @@ public class DatePattern
 		}
 	}
 
-	private class TwoDigitMonthToken : Token
+	private sealed class TwoDigitMonthToken : Token
 	{
 		public static readonly TwoDigitMonthToken Instance = new();
 
@@ -650,7 +651,7 @@ public class DatePattern
 		}
 	}
 
-	private class MonthNameToken : Token
+	private sealed class MonthNameToken : Token
 	{
 		public static readonly MonthNameToken InvariantAbbreviated =
 			new() { MonthNames = CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedMonthNames };
@@ -672,11 +673,11 @@ public class DatePattern
 
 				for (Int32 index = 1; index < value.Length - 1; ++index) // Ignore the 13th month.
 				{
-					String monthName = value[index];
-					if (monthName.Length < minLength)
-						minLength = monthName.Length;
-					else if (monthName.Length > maxLength)
-						maxLength = monthName.Length;
+					Int32 length = value[index].Length;
+					if (length < minLength)
+						minLength = length;
+					else if (length > maxLength)
+						maxLength = length;
 				}
 
 				this.MinLength = minLength;
@@ -699,7 +700,7 @@ public class DatePattern
 		}
 	}
 
-	private class YearToken : Token
+	private sealed class YearToken : Token
 	{
 		public static readonly YearToken Instance = new();
 
@@ -712,7 +713,7 @@ public class DatePattern
 		{
 			Int32 year = context.Date.Year;
 
-			if (year >= 100)
+			if (year >= Date.YearsPerCentury)
 			{
 				Int32 century = Date.GetCentury(year);
 				Int32 yearOfCentury = Date.GetYearOfCentury(year);
@@ -720,7 +721,9 @@ public class DatePattern
 				context.FormatTwoDigitNumber(yearOfCentury);
 			}
 			else
+			{
 				context.FormatOneOrTwoDigitNumber(year);
+			}
 		}
 
 		public override Boolean TryParse(ref ParseContext context)
@@ -729,7 +732,7 @@ public class DatePattern
 		}
 	}
 
-	private class FourDigitYearToken : Token
+	private sealed class FourDigitYearToken : Token
 	{
 		public static readonly FourDigitYearToken Instance = new();
 
@@ -741,19 +744,10 @@ public class DatePattern
 		public override void Format(ref FormatContext context)
 		{
 			Int32 year = context.Date.Year;
-
-			if (year >= 100)
-			{
-				Int32 century = Date.GetCentury(year);
-				Int32 yearOfCentury = Date.GetYearOfCentury(year);
-				context.FormatTwoDigitNumber(century);
-				context.FormatTwoDigitNumber(yearOfCentury);
-			}
-			else
-			{
-				context.FormatString(['0', '0']);
-				context.FormatTwoDigitNumber(year);
-			}
+			Int32 century = Date.GetCentury(year);
+			Int32 yearOfCentury = Date.GetYearOfCentury(year);
+			context.FormatTwoDigitNumber(century);
+			context.FormatTwoDigitNumber(yearOfCentury);
 		}
 
 		public override Boolean TryParse(ref ParseContext context)
@@ -762,7 +756,7 @@ public class DatePattern
 		}
 	}
 
-	private class YearOfCenturyToken : Token
+	private sealed class YearOfCenturyToken : Token
 	{
 		private readonly Int32 _maxCentury100;
 		private readonly Int32 _maxYearOfCentury;
@@ -770,7 +764,7 @@ public class DatePattern
 		public YearOfCenturyToken(Int32 twoDigitYearMax)
 			: base(minLength: 2, maxLength: 2)
 		{
-			_maxCentury100 = Date.GetCentury(twoDigitYearMax) * 100;
+			_maxCentury100 = Date.GetCentury(twoDigitYearMax) * Date.YearsPerCentury;
 			_maxYearOfCentury = Date.GetYearOfCentury(twoDigitYearMax);
 		}
 
@@ -789,12 +783,12 @@ public class DatePattern
 		{
 			Int32 year = _maxCentury100 + yearOfCentury;
 			if (yearOfCentury > _maxYearOfCentury)
-				year -= 100;
+				year -= Date.YearsPerCentury;
 			return year;
 		}
 	}
 
-	private class LiteralToken : Token
+	private sealed class LiteralToken : Token
 	{
 		public static readonly LiteralToken Hyphen = new("-");
 		public static readonly LiteralToken Space = new(" ");
@@ -819,6 +813,8 @@ public class DatePattern
 	}
 
 	#endregion Tokens
+
+	#region Contexts
 
 	private ref struct FormatContext
 	{
@@ -846,21 +842,23 @@ public class DatePattern
 		public void FormatString(ReadOnlySpan<Char> value)
 		{
 			Span<Char> chars = _chars;
-			value.CopyTo(chars);
 			_chars = chars.Slice(value.Length);
+			value.CopyTo(chars);
 		}
 
 		public void FormatOneOrTwoDigitNumber(Int32 number)
 		{
 			if (number >= 10)
+			{
 				this.FormatTwoDigitNumber(number);
+			}
 			else
 			{
 				Debug.Assert(number >= 0);
 
 				Span<Char> chars = _chars;
+				_chars = chars.Slice(1); // Access Slice first to elide bounds check on index 0.
 				chars[0] = (Char)(number + '0');
-				_chars = chars.Slice(1);
 			}
 		}
 
@@ -873,16 +871,16 @@ public class DatePattern
 			// Unoptimized:
 			//   Int32 tens = number / divisor;
 			//   Int32 ones = number % divisor;
-			// Optimized (valid for number in [0, 16383]; 10 is minimum shift count that encompasses [0, 99]):
+			// Optimized (valid for number in [0..16383]; 10 is minimum shift count that encompasses [0..99]):
 			const Int32 shift = 16;
 			const Int32 multiplier = (1 << shift) / divisor + 1;
-			Int32 tens = number * multiplier >>> shift;
-			Int32 ones = (Int32)((UInt32)number * multiplier % (1 << shift) * divisor >>> shift);
+			Int32 tens = (number * multiplier) >>> shift;
+			Int32 ones = (Int32)(((UInt32)number * multiplier % (1 << shift) * divisor) >>> shift);
 
 			Span<Char> chars = _chars;
-			chars[1] = (Char)(ones + '0'); // Access index 1 first to elide bounds check on index 0.
+			_chars = chars.Slice(2); // Access Slice first to elide bounds checks on indexes 0 and 1.
 			chars[0] = (Char)(tens + '0');
-			_chars = chars.Slice(2);
+			chars[1] = (Char)(ones + '0');
 		}
 	}
 
@@ -927,7 +925,9 @@ public class DatePattern
 					goto InvalidDate;
 			}
 			else
+			{
 				year = 1;
+			}
 
 			Int32 month = context.Month;
 			if (month >= 0)
@@ -939,25 +939,29 @@ public class DatePattern
 					goto InvalidDate;
 			}
 			else
+			{
 				month = 1;
+			}
 
 			Int32 day = context.Day;
 			if (day >= 0)
 			{
 				// Unoptimized:
-				//   if (day < 1 || day > UnsafeDaysInMonth(year, month))
+				//   if (day < 1 || day > Date.UncheckedDaysInMonth(year, month))
 				// Optimized:
-				if (unchecked((UInt32)(day - 1)) >= Date.UnsafeDaysInMonth(year, month))
+				if (unchecked((UInt32)(day - 1)) >= Date.UncheckedDaysInMonth(year, month))
 					goto InvalidDate;
 			}
 			else
+			{
 				day = 1;
+			}
 
 			Int32 dayOfWeek = context.DayOfWeek;
-			if (dayOfWeek > 0 && dayOfWeek != (Int32)Date.UnsafeDayOfWeek(year, month, day) + 1)
+			if (dayOfWeek > 0 && dayOfWeek != (Int32)Date.UncheckedDayOfWeek(year, month, day) + 1)
 				goto InvalidDate;
 
-			date = Date.UnsafeCreate(year, month, day);
+			date = Date.UncheckedCreate(year, month, day);
 			return true;
 
 		InvalidDate:
@@ -986,7 +990,9 @@ public class DatePattern
 				return true;
 			}
 			else
+			{
 				return false;
+			}
 		}
 
 		public Boolean TryParseName(
@@ -1035,7 +1041,9 @@ public class DatePattern
 					++charIndex;
 				}
 				else
+				{
 					break;
+				}
 			}
 
 			if (charIndex >= minDigits)
@@ -1044,7 +1052,9 @@ public class DatePattern
 				return SetField(ref fieldValue, number);
 			}
 			else
+			{
 				return false;
+			}
 		}
 
 		public Boolean TryParseOneOrTwoDigitNumber(ref Int32 fieldValue)
@@ -1061,7 +1071,9 @@ public class DatePattern
 					_chars = chars.Slice(2);
 				}
 				else
+				{
 					_chars = chars.Slice(1);
+				}
 
 				return SetField(ref fieldValue, number);
 			}
@@ -1090,7 +1102,10 @@ public class DatePattern
 				fieldValue = newValue;
 			else if (newValue != fieldValue)
 				return false;
+
 			return true;
 		}
 	}
+
+	#endregion
 }
