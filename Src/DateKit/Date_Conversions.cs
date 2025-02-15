@@ -86,17 +86,7 @@ partial struct Date : IFormattable
 		Int32 daysSinceMarch1 = (Int32)(unchecked((UInt32)u2) / (multiplier2 * 4));
 
 		Int32 year = century * YearsPerCentury + yearOfCentury;
-
-		// Unoptimized:
-		//   Int32 n3 = daysSinceMarch1 * 5 + 461;
-		//   Int32 month = n3 / 153;
-		//   Int32 day = n3 % 153 / 5 + 1;
-		// Optimized (valid for daysSinceMarch1 in [0..733]):
-		const Int32 shift3 = 16;
-		const Int32 multiplier3 = (1 << shift3) * 5 / 153;
-		Int32 n3 = daysSinceMarch1 * multiplier3 + 197913;
-		Int32 month = n3 >>> shift3; // [3..14]
-		Int32 day = (Int32)((UInt32)n3 % (1 << shift3) / multiplier3) + 1; // [1..31]
+		GetMonthAndDayFromDayOfRotatedYear(daysSinceMarch1, out Int32 month, out Int32 day);
 
 		// Move January and February to the beginning of the next year:
 		if (month > December)

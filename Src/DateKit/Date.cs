@@ -102,7 +102,8 @@ public readonly partial struct Date
 	// YearShift and MonthShift must satisfy the following criteria:
 	// 1. MonthShift >= 6 so that AddSmallNegativeDays/AddSmallPositiveDays can store day values in
 	//    [(1 - 28)..(31 + 28)].
-	// 2. YearShift >= MonthShift + 4 to store month values in [1..12].
+	// 2. YearShift >= MonthShift + 5 so that AddSmallNegativeMonths/AddSmallPositiveMonths can store month values in
+	//    [(1 - 12)..(12 + 12)].
 	// 3. YearShift <= 32 - 15 = 17 so that AddYears can store year values in [(1 - 9998)..(9999 + 9998)].
 
 	private static Int32 PackYear(Int32 year)
@@ -153,6 +154,13 @@ public readonly partial struct Date
 	{
 		const Int32 mask = (1 << YearShift) - 1;
 		return packedValue & mask;
+	}
+
+	private static Int32 ExtractSignedMonthDay(Int32 packedValue)
+	{
+		return YearShift >= 16 && MonthShift <= 16 - 5
+			? unchecked((Int16)packedValue)
+			: (packedValue << (32 - YearShift)) >> (32 - YearShift);
 	}
 
 	#endregion Packed Values
