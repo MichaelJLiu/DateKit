@@ -13,10 +13,10 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">True</IsAotCompatible>
 
     <!-- Packaging -->
-    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionPrefix>1.0.2</VersionPrefix>
     <Authors>Michael J. Liu</Authors>
     <Description>A simple and efficient date-only type for .NET and .NET Framework.</Description>
-    <Copyright>Copyright (c) 2024 Michael J. Liu.</Copyright>
+    <Copyright>Copyright (c) 2025 Michael J. Liu.</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/MichaelJLiu/DateKit</RepositoryUrl>
     <PackageTags>date</PackageTags>
