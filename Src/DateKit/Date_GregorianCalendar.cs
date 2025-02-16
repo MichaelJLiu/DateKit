@@ -155,7 +155,7 @@ partial struct Date
 		//   = (2^32)·q + [(2^32)·(r + 1) - 4·(n + 1)] / 7.
 		// The * operator discards the upper 32 bits (which contain q).
 		// The >>> operator divides the lower 32 bits by 2^29, yielding [8·r + 8 - 4·(n + 1) / 2^29] / 7,
-		// and then rounds down, yielding floor((8·r + 7) / 7) = r + 1 when s <= 0x08000005.
+		// and then rounds down, yielding floor((8·r + 7) / 7) = r + 1 when n <= 0x08000005.
 		return (DayOfWeek)dayOfWeek;
 	}
 
