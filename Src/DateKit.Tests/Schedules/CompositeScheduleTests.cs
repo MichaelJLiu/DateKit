@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 using FluentAssertions;
-
-using Moq;
 
 using NUnit.Framework;
 
@@ -36,7 +33,7 @@ public class CompositeScheduleTests
 	public void Constructor_WithNullSchedule_ThrowsException()
 	{
 		// Arrange:
-		ImmutableArray<Schedule> baseSchedules = [Mock.Of<Schedule>(), null!];
+		ImmutableArray<Schedule> baseSchedules = [new MockSchedule(), null!, new MockSchedule()];
 
 		// Act:
 		Func<CompositeSchedule> func = () => new CompositeSchedule(baseSchedules);
@@ -44,7 +41,7 @@ public class CompositeScheduleTests
 		// Assert:
 		func.Should().Throw<ArgumentException>()
 			.WithParameterName("baseSchedules")
-			.WithMessage("The collection contains a null schedule.*");
+			.WithMessage("The collection cannot contain null references.*");
 	}
 
 	#endregion
@@ -55,7 +52,7 @@ public class CompositeScheduleTests
 	public void BaseSchedules_ReturnsExpected()
 	{
 		// Arrange:
-		ImmutableArray<Schedule> baseSchedules = [Mock.Of<Schedule>(), Mock.Of<Schedule>(), Mock.Of<Schedule>()];
+		ImmutableArray<Schedule> baseSchedules = [new MockSchedule(), new MockSchedule(), new MockSchedule()];
 		CompositeSchedule schedule = new(baseSchedules);
 
 		// Act:
@@ -70,15 +67,15 @@ public class CompositeScheduleTests
 	#region Contains
 
 	[Test]
-	public void Contains_ReturnsExpected(
+	public void Contains_WithValidDate_ReturnsExpected(
 		[Values(false, true)] Boolean isDateInBaseSchedule1,
 		[Values(false, true)] Boolean isDateInBaseSchedule2)
 	{
 		// Arrange:
 		Date date = new(2000, 6, 15);
 		Schedule schedule = new CompositeSchedule(
-			Mock.Of<Schedule>(baseSchedule1 => baseSchedule1.Contains(date) == isDateInBaseSchedule1),
-			Mock.Of<Schedule>(baseSchedule2 => baseSchedule2.Contains(date) == isDateInBaseSchedule2));
+			new MockSchedule(contains: [(date, isDateInBaseSchedule1)]),
+			new MockSchedule(contains: [(date, isDateInBaseSchedule2)]));
 
 		// Act:
 		Boolean actualResult = schedule.Contains(date);
@@ -92,20 +89,6 @@ public class CompositeScheduleTests
 	#region EnumerateBackwardFrom
 
 	[Test]
-	public void EnumerateBackwardFrom_WithEmptyDate_ThrowsException()
-	{
-		// Arrange:
-		Schedule schedule = new CompositeSchedule(Mock.Of<Schedule>());
-		Date date = Date.Empty;
-
-		// Act:
-		Func<IEnumerable<Date>> func = () => schedule.EnumerateBackwardFrom(date);
-
-		// Assert:
-		func.Should().Throw<ArgumentException>().WithParameterName("date");
-	}
-
-	[Test]
 	public void EnumerateBackwardFrom_WithValidDate_ReturnsExpected()
 	{
 		// Arrange:
@@ -113,7 +96,7 @@ public class CompositeScheduleTests
 
 		Schedule CreateBaseSchedule(params Date[] dates)
 		{
-			return Mock.Of<Schedule>(baseSchedule => baseSchedule.EnumerateBackwardFrom(date) == dates);
+			return new MockSchedule(enumerateBackwardFrom: [(date, dates)]);
 		}
 
 		Date[] dates = Enumerable.Range(1, 5).Select(offset => date.AddDays(-offset)).ToArray();
@@ -135,20 +118,6 @@ public class CompositeScheduleTests
 	#region EnumerateForwardFrom
 
 	[Test]
-	public void EnumerateForwardFrom_WithEmptyDate_ThrowsException()
-	{
-		// Arrange:
-		Schedule schedule = new CompositeSchedule(Mock.Of<Schedule>());
-		Date date = Date.Empty;
-
-		// Act:
-		Func<IEnumerable<Date>> func = () => schedule.EnumerateForwardFrom(date);
-
-		// Assert:
-		func.Should().Throw<ArgumentException>().WithParameterName("date");
-	}
-
-	[Test]
 	public void EnumerateForwardFrom_WithValidDate_ReturnsExpected()
 	{
 		// Arrange:
@@ -156,7 +125,7 @@ public class CompositeScheduleTests
 
 		Schedule CreateBaseSchedule(params Date[] dates)
 		{
-			return Mock.Of<Schedule>(baseSchedule => baseSchedule.EnumerateForwardFrom(date) == dates);
+			return new MockSchedule(enumerateForwardFrom: [(date, dates)]);
 		}
 
 		Date[] dates = Enumerable.Range(1, 5).Select(date.AddDays).ToArray();

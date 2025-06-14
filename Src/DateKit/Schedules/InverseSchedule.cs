@@ -37,21 +37,15 @@ public sealed class InverseSchedule : Schedule
 	public Schedule BaseSchedule { get; }
 
 	/// <inheritdoc />
-	public override Boolean Contains(Date date)
+	protected internal override Boolean ContainsCore(Date date)
 	{
-		return !this.BaseSchedule.Contains(date) && date != Date.Empty;
+		return !this.BaseSchedule.ContainsCore(date);
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<Date> EnumerateBackwardFrom(Date date)
+	protected internal override IEnumerable<Date> EnumerateBackwardFromCore(Date date)
 	{
-		ThrowHelper.ThrowIfDateArgumentIsEmpty(date, ExceptionArgument.date);
-		return this.EnumerateBackwardFromIterator(date);
-	}
-
-	private IEnumerable<Date> EnumerateBackwardFromIterator(Date date)
-	{
-		using (IEnumerator<Date> enumerator = this.BaseSchedule.EnumerateBackwardFrom(date).GetEnumerator())
+		using (IEnumerator<Date> enumerator = this.BaseSchedule.EnumerateBackwardFromCore(date).GetEnumerator())
 		{
 			if (enumerator.MoveNext())
 			{
@@ -85,15 +79,9 @@ public sealed class InverseSchedule : Schedule
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<Date> EnumerateForwardFrom(Date date)
+	protected internal override IEnumerable<Date> EnumerateForwardFromCore(Date date)
 	{
-		ThrowHelper.ThrowIfDateArgumentIsEmpty(date, ExceptionArgument.date);
-		return this.EnumerateForwardFromIterator(date);
-	}
-
-	private IEnumerable<Date> EnumerateForwardFromIterator(Date date)
-	{
-		using (IEnumerator<Date> enumerator = this.BaseSchedule.EnumerateForwardFrom(date).GetEnumerator())
+		using (IEnumerator<Date> enumerator = this.BaseSchedule.EnumerateForwardFromCore(date).GetEnumerator())
 		{
 			if (enumerator.MoveNext())
 			{

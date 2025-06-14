@@ -50,7 +50,7 @@ internal static class ThrowHelper
 	[DoesNotReturn]
 	public static void ThrowEmptyDateArgumentException(ExceptionArgument argument)
 	{
-		throw new ArgumentException("Operation is not supported by the default (empty) Date.", GetParamName(argument));
+		throw new ArgumentException("The value cannot be the default (empty) Date.", GetParamName(argument));
 	}
 
 	[DoesNotReturn]

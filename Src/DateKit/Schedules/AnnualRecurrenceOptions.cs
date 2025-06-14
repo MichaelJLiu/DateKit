@@ -7,17 +7,15 @@ namespace DateKit.Schedules;
 /// </summary>
 public class AnnualRecurrenceOptions
 {
-	internal static readonly AnnualRecurrenceOptions Default = new();
-
 	private Int32 _startYear = Date.MinYear;
 	private Int32 _endYear = Date.MaxYear;
 
 	/// <summary>
-	/// Gets or sets the first year in which the event occurs.
+	/// Gets or sets the year in which the recurrence starts.
 	/// </summary>
 	/// <value>
-	/// An integer between <see cref="Date.MinYear" /> and <see cref="EndYear" /> that specifies the first year
-	/// in which the event occurs. The default is <see cref="Date.MinYear" />.
+	/// An integer between <see cref="Date.MinYear" /> and <see cref="EndYear" /> that specifies
+	/// the year in which the recurrence starts. The default is <see cref="Date.MinYear" />.
 	/// </value>
 	/// <exception cref="ArgumentOutOfRangeException">
 	/// The value specified when setting the property is less than <see cref="Date.MinYear" />
@@ -31,7 +29,7 @@ public class AnnualRecurrenceOptions
 			if (value < Date.MinYear || value > this.EndYear)
 			{
 				throw new ArgumentOutOfRangeException(nameof(value), value,
-					$"{nameof(this.StartYear)} must be between {Date.MinYear} and {this.EndYear} (the value of {nameof(this.EndYear)}).");
+					$"The value must be between {Date.MinYear} and {this.EndYear} ({nameof(this.EndYear)}).");
 			}
 
 			_startYear = value;
@@ -39,11 +37,11 @@ public class AnnualRecurrenceOptions
 	}
 
 	/// <summary>
-	/// Gets or sets the last year in which the event occurs.
+	/// Gets or sets the year in which the recurrence ends.
 	/// </summary>
 	/// <value>
-	/// An integer between <see cref="StartYear" /> and <see cref="Date.MaxYear" /> that specifies the last year
-	/// in which the event occurs. The default is <see cref="Date.MaxYear" />.
+	/// An integer between <see cref="StartYear" /> and <see cref="Date.MaxYear" /> that specifies
+	/// the year in which the recurrence ends. The default is <see cref="Date.MaxYear" />.
 	/// </value>
 	/// <exception cref="ArgumentOutOfRangeException">
 	/// The value specified when setting the property is less than <see cref="StartYear" />
@@ -57,7 +55,7 @@ public class AnnualRecurrenceOptions
 			if (value < this.StartYear || value > Date.MaxYear)
 			{
 				throw new ArgumentOutOfRangeException(nameof(value), value,
-					$"{nameof(this.EndYear)} must be between {this.StartYear} (the value of {nameof(this.StartYear)}) and {Date.MaxYear}.");
+					$"The value must be between {this.StartYear} ({nameof(this.StartYear)}) and {Date.MaxYear}.");
 			}
 
 			_endYear = value;

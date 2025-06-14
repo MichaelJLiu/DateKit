@@ -97,23 +97,32 @@ partial class DateTests
 		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
-	[Test]
-	public void AddMonths_OfEmptyDate_ThrowsException()
+	[TestCase(-13)] // AddLarge(Negative)Months
+	[TestCase(-1)] // AddSmallNegativeMonths
+	[TestCase(1)] // AddSmallPositiveMonths
+	[TestCase(13)] // AddLarge(Positive)Months
+	public void AddMonths_OfEmptyDate_ThrowsException(Int32 number)
 	{
 		// Arrange:
 		Date date = Date.Empty;
 
 		// Act:
-		Func<Date> func = () => date.AddMonths(0);
+		Func<Date> func = () => date.AddMonths(number);
 
 		// Assert:
 		func.Should().Throw<InvalidOperationException>().WithMessage(EmptyDateExceptionMessage);
 	}
 
-	[TestCase(Date.MinYear, 1, 1, -1)]
+	// AddLarge(Negative)Months
 	[TestCase(2000, 6, 15, -((2000 - Date.MinYear) * Date.MonthsPerYear + 6))]
+	// AddSmallNegativeMonths
+	[TestCase(Date.MinYear, 1, 1, -12)] // largest overflow
+	[TestCase(Date.MinYear, 1, 31, -1)] // smallest overflow
+	// AddSmallPositiveMonths
+	[TestCase(Date.MaxYear, 12, 1, 1)] // smallest overflow
+	[TestCase(Date.MaxYear, 12, 31, 12)] // largest overflow
+	// AddLarge(Positive)Months
 	[TestCase(2000, 6, 15, (Date.MaxYear - 2000) * Date.MonthsPerYear + 7)]
-	[TestCase(Date.MaxYear, 12, 31, 1)]
 	public void AddMonths_WhenResultOverflows_ThrowsException(Int32 year, Int32 month, Int32 day, Int32 number)
 	{
 		// Arrange:
@@ -126,18 +135,51 @@ partial class DateTests
 		func.Should().Throw<OverflowException>().WithMessage(OverflowExceptionMessage);
 	}
 
-	[TestCase(Date.MinYear, 1, 31, (Date.MaxYear - Date.MinYear + 1) * Date.MonthsPerYear - 1)]
-	[TestCase(2000, 1, 31, 1)] // -> 2000-02-29
-	[TestCase(2000, 1, 31, 2)] // -> 2000-03-31
+	// AddLarge(Negative)Months
 	[TestCase(2000, 6, 15, -((2000 - Date.MinYear) * Date.MonthsPerYear + 5))]
 	[TestCase(2000, 6, 15, -18)] // -> 1998-12-15
 	[TestCase(2000, 6, 15, -17)] // -> 1999-01-15
-	[TestCase(2000, 6, 15, -6)] // -> 1999-12-15
-	[TestCase(2000, 6, 15, -5)] // -> 2000-01-15
-	[TestCase(2000, 6, 15, 6)] // -> 2000-12-15
-	[TestCase(2000, 6, 15, 7)] // -> 2001-01-15
-	[TestCase(2000, 6, 15, (Date.MaxYear - 2000) * Date.MonthsPerYear + 6)]
 	[TestCase(Date.MaxYear, 12, 1, (Date.MinYear - Date.MaxYear - 1) * Date.MonthsPerYear + 1)]
+	// AddSmallNegativeMonths
+	[TestCase(Date.MinYear, 12, 1, -11)] // -> 0001-01-01
+	[TestCase(Date.MinYear + 1, 1, 1, -12)] // -> 0001-01-01
+	[TestCase(2000, 5, 30, -3)] // -> 2000-02-29 (30 -> 29 of February)
+	[TestCase(2000, 5, 30, -2)] // -> 2000-03-30 (30 -> 30)
+	[TestCase(2000, 5, 30, -1)] // -> 2000-04-30 (30 -> 30 of short month)
+	[TestCase(2000, 5, 31, -3)] // -> 2000-02-29 (31 -> 29 of February)
+	[TestCase(2000, 5, 31, -2)] // -> 2000-03-31 (31 -> 31)
+	[TestCase(2000, 5, 31, -1)] // -> 2000-04-30 (31 -> 30 of short month)
+	[TestCase(2000, 6, 15, -12)] // -> 1999-06-15 (year rollover)
+	[TestCase(2000, 6, 15, -6)] // -> 1999-12-15 (year rollover)
+	[TestCase(2000, 6, 15, -5)] // -> 2000-01-15
+	[TestCase(2000, 6, 15, -1)] // -> 2000-05-15
+	[TestCase(2001, 3, 29, -1)] // -> 2001-02-28 (29 -> 28 of February)
+	// AddSmallPositiveMonths
+	[TestCase(2000, 1, 30, 1)] // -> 2000-02-29 (30 -> 29 of February)
+	[TestCase(2000, 1, 30, 2)] // -> 2000-03-30 (30 -> 30)
+	[TestCase(2000, 1, 30, 3)] // -> 2000-04-30 (30 -> 30 of short month)
+	[TestCase(2000, 1, 31, 1)] // -> 2000-02-29 (31 -> 29 of February)
+	[TestCase(2000, 1, 31, 2)] // -> 2000-03-31 (31 -> 31)
+	[TestCase(2000, 1, 31, 3)] // -> 2000-04-30 (31 -> 30 of short month)
+	[TestCase(2000, 6, 15, 0)] // -> 2000-06-15
+	[TestCase(2000, 6, 15, 6)] // -> 2000-12-15
+	[TestCase(2000, 6, 15, 7)] // -> 2001-01-15 (year rollover)
+	[TestCase(2000, 6, 15, 12)] // -> 2001-06-15 (year rollover)
+	[TestCase(2001, 1, 29, 1)] // -> 2001-02-28 (29 -> 28 of February)
+	[TestCase(Date.MaxYear - 1, 12, 31, 12)] // -> 9999-12-31
+	[TestCase(Date.MaxYear, 1, 31, 11)] // -> 9999-12-31
+	// AddLarge(Positive)Months
+	[TestCase(Date.MinYear, 1, 31, (Date.MaxYear - Date.MinYear + 1) * Date.MonthsPerYear - 1)]
+	[TestCase(1999, 1, 30, 13)] // -> 2000-02-29 (30 -> 29 of February)
+	[TestCase(1999, 1, 30, 14)] // -> 2000-03-30 (30 -> 30)
+	[TestCase(1999, 1, 30, 15)] // -> 2000-04-30 (30 -> 30 of short month)
+	[TestCase(1999, 1, 31, 13)] // -> 2000-02-29 (31 -> 29 of February)
+	[TestCase(1999, 1, 31, 14)] // -> 2000-03-31 (31 -> 31)
+	[TestCase(1999, 1, 31, 15)] // -> 2000-04-30 (31 -> 30 of short month)
+	[TestCase(1999, 6, 15, 18)] // -> 2000-12-15
+	[TestCase(1999, 6, 15, 19)] // -> 2001-01-15
+	[TestCase(2000, 1, 29, 13)] // -> 2001-02-28 (29 -> 28 of February)
+	[TestCase(2000, 6, 15, (Date.MaxYear - 2000) * Date.MonthsPerYear + 6)]
 	public void AddMonths_WhenResultDoesNotOverflow_ReturnsExpected(Int32 year, Int32 month, Int32 day, Int32 number)
 	{
 		// Arrange:
@@ -173,14 +215,18 @@ partial class DateTests
 
 	// AddLargeNegativeDays
 	[TestCase(-3652059)]
+	[TestCase(-366)]
+	// AddMediumPositiveDays
 	[TestCase(-29)]
 	// AddSmallNegativeDays
 	[TestCase(-1)]
 	// AddSmallPositiveDays
 	[TestCase(0)]
 	[TestCase(1)]
-	// AddLargePositiveDays
+	// AddMediumPositiveDays
 	[TestCase(29)]
+	// AddLargePositiveDays
+	[TestCase(366)]
 	[TestCase(3652059)]
 	public void AddDays_OfEmptyDate_ThrowsException(Int32 number)
 	{
@@ -195,15 +241,20 @@ partial class DateTests
 	}
 
 	// AddLargeNegativeDays
-	[TestCase(Date.MinYear, 1, 29, -29)]
 	[TestCase(2000, 6, 15, -730286)]
+	[TestCase(Date.MinYear + 1, 1, 1, -366)]
+	// AddMediumNegativeDays
+	[TestCase(Date.MinYear, 1, 29, -29)]
 	// AddSmallNegativeDays
 	[TestCase(Date.MinYear, 1, 1, -1)]
 	// AddSmallPositiveDays
 	[TestCase(Date.MaxYear, 12, 31, 1)]
+	// AddMediumPositiveDays
+	[TestCase(Date.MaxYear, 12, 3, 29)] // -> 10000-01-01 (Mar-Dec -> Jan-Feb)
+	[TestCase(Date.MaxYear, 12, 31, 61)] // -> 10000-03-01 (Mar-Dec -> Mar-Dec)
 	// AddLargePositiveDays
+	[TestCase(Date.MaxYear - 1, 12, 31, 366)]
 	[TestCase(2000, 6, 15, 2921774)]
-	[TestCase(Date.MaxYear, 12, 3, 29)]
 	public void AddDays_WhenResultOverflows_ThrowsException(Int32 year, Int32 month, Int32 day, Int32 number)
 	{
 		// Arrange:
@@ -217,11 +268,21 @@ partial class DateTests
 	}
 
 	// AddLargeNegativeDays
-	[TestCase(2000, 3, 1, -61)] // -> 1999-12-31 (year rollover)
 	[TestCase(2000, 6, 15, -730285)] // -> 0001-01-01
-	[TestCase(2000, 6, 15, -46)] // -> 2000-04-30
-	[TestCase(2000, 6, 15, -29)] // -> 2000-05-17
 	[TestCase(Date.MaxYear, 12, 31, -3652058)] // -> 0001-01-01
+	// AddMediumNegativeDays
+	[TestCase(Date.MinYear, 1, 30, -29)] // -> 0001-01-01
+	[TestCase(Date.MinYear, 12, 31, -364)] // -> 0001-01-01
+	[TestCase(2000, 2, 29, -365)] // -> 1999-03-01 (leap day -> Mar-Dec)
+	[TestCase(2000, 2, 29, -59)] // -> 2000-01-01 (leap day -> Jan-Feb)
+	[TestCase(2000, 3, 1, -60)] // -> 2000-01-01 (Mar-Dec -> Jan-Feb, with leap day)
+	[TestCase(2000, 6, 15, -29)] // -> 2000-05-17
+	[TestCase(2001, 2, 28, -365)] // -> 2000-02-29 (Jan-Feb -> leap day)
+	[TestCase(2001, 2, 28, -364)] // -> 2000-03-01 (Jan-Feb -> Mar-Dec)
+	[TestCase(2001, 3, 1, -365)] // -> 2000-03-01 (Mar-Dec -> Mar-Dec, without leap day)
+	[TestCase(2001, 12, 31, -364)] // -> 2001-01-01 (Mar-Dec -> Jan-Feb, without leap day)
+	[TestCase(2002, 1, 1, -365)] // -> 2001-01-01 (Jan-Feb -> Jan-Feb, without leap day)
+	[TestCase(2002, 2, 28, -365)] // -> 2001-02-28 (Jan-Feb -> Jan-Feb, without leap day)
 	// AddSmallNegativeDays
 	[TestCase(Date.MinYear, 1, 2, -1)] // -> 0001-01-01
 	[TestCase(2000, 1, 1, -1)] // -> 1999-12-31 (year rollover)
@@ -239,14 +300,22 @@ partial class DateTests
 	[TestCase(2000, 11, 30, 1)] // -> 2000-12-01
 	[TestCase(2000, 12, 31, 1)] // -> 2001-01-01 (year rollover)
 	[TestCase(Date.MaxYear, 12, 30, 1)] // -> 9999-12-31
+	// AddMediumPositiveDays
+	[TestCase(1999, 3, 1, 365)] // -> 2000-02-29 (Mar-Dec -> leap day)
+	[TestCase(2000, 1, 1, 59)] // -> 2000-02-29 (Jan-Feb -> leap day)
+	[TestCase(2000, 1, 1, 60)] // -> 2000-03-01 (Jan-Feb -> Mar-Dec, with leap day)
+	[TestCase(2000, 2, 29, 365)] // -> 2001-02-28 (leap day -> Jan-Feb)
+	[TestCase(2000, 3, 1, 364)] // -> 2001-02-28 (Mar-Dec -> Jan-Feb)
+	[TestCase(2000, 3, 1, 365)] // -> 2001-03-01 (Mar-Dec -> Mar-Dec, without leap day)
+	[TestCase(2000, 6, 15, 29)] // -> 2000-07-14
+	[TestCase(2001, 1, 1, 364)] // -> 2001-12-31 (Jan-Feb -> Mar-Dec, without leap day)
+	[TestCase(2001, 1, 1, 365)] // -> 2002-01-01 (Jan-Feb -> Jan-Feb, without leap day)
+	[TestCase(2001, 2, 28, 365)] // -> 2002-02-28 (Jan-Feb -> Jan-Feb, without leap day)
+	[TestCase(Date.MaxYear, 1, 1, 364)] // -> 9999-12-31
+	[TestCase(Date.MaxYear, 12, 2, 29)] // -> 9999-12-31
 	// AddLargePositiveDays
 	[TestCase(Date.MinYear, 1, 1, 3652058)] // -> 9999-12-31
-	[TestCase(2000, 6, 15, 29)] // -> 2000-07-14
-	[TestCase(2000, 6, 15, 46)] // -> 2000-07-31 (day > MinDaysPerMonth && day <= daysInMonth)
-	[TestCase(2000, 6, 15, 47)] // -> 2000-08-01
 	[TestCase(2000, 6, 15, 2921773)] // -> 9999-12-31
-	[TestCase(2000, 12, 31, 32)] // -> 2001-02-01 (year rollover)
-	[TestCase(2000, 12, 31, 60)] // -> 2001-03-01 (leap year to common year)
 	public void AddDays_WhenResultDoesNotOverflow_ReturnsExpected(Int32 year, Int32 month, Int32 day, Int32 number)
 	{
 		// Arrange:

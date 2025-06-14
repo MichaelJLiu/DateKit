@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace DateKit.Schedules;
@@ -91,24 +90,23 @@ public sealed class AnnualDayOfMonthRecurrence : AnnualRecurrence
 	public DayOfWeekAdjustments DayOfWeekAdjustments => new(_adjustments);
 
 	/// <inheritdoc />
-	public override Boolean Contains(Date date)
+	public override void GetDayOfYearRange(out Int32 minDayOfYear, out Int32 maxDayOfYear)
 	{
-		Int32 year = date.Year;
-		return year >= this.StartYear && year <= this.EndYear && (
-			date == this.UnsafeGetOccurrence(year) ||
-			(_mayOccurInPreviousYear && year < Date.MaxYear && date == this.UnsafeGetOccurrence(year + 1)) ||
-			(_mayOccurInNextYear && year > Date.MinYear && date == this.UnsafeGetOccurrence(year - 1)));
+		throw new NotImplementedException();
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<Date> EnumerateBackwardFrom(Date date)
+	protected internal override Boolean ContainsCore(Date date)
 	{
-		if (date == Date.Empty)
-			ThrowHelper.ThrowEmptyDateArgumentException(ExceptionArgument.date);
-		return this.EnumerateBackwardFromIterator(date);
+		Int32 year = date.Year;
+		return year >= this.StartYear && year <= this.EndYear && (
+			date == this.GetOccurrenceCore(year) ||
+			(_mayOccurInPreviousYear && year < Date.MaxYear && date == this.GetOccurrenceCore(year + 1)) ||
+			(_mayOccurInNextYear && year > Date.MinYear && date == this.GetOccurrenceCore(year - 1)));
 	}
 
-	private IEnumerable<Date> EnumerateBackwardFromIterator(Date date)
+	/// <inheritdoc />
+	protected internal override IEnumerable<Date> EnumerateBackwardFromCore(Date date)
 	{
 		Int32 startYear = this.StartYear;
 		Int32 year = date.Year;
@@ -119,23 +117,16 @@ public sealed class AnnualDayOfMonthRecurrence : AnnualRecurrence
 		if (year > endYear)
 			year = endYear;
 
-		Date firstOccurrence = this.UnsafeGetOccurrence(year);
+		Date firstOccurrence = this.GetOccurrenceCore(year);
 		if (firstOccurrence <= date)
 			yield return firstOccurrence;
 
 		for (--year; year >= startYear; --year)
-			yield return this.UnsafeGetOccurrence(year);
+			yield return this.GetOccurrenceCore(year);
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<Date> EnumerateForwardFrom(Date date)
-	{
-		if (date == Date.Empty)
-			ThrowHelper.ThrowEmptyDateArgumentException(ExceptionArgument.date);
-		return this.EnumerateForwardFromIterator(date);
-	}
-
-	private IEnumerable<Date> EnumerateForwardFromIterator(Date date)
+	protected internal override IEnumerable<Date> EnumerateForwardFromCore(Date date)
 	{
 		Int32 endYear = this.EndYear;
 		Int32 year = date.Year;
@@ -149,31 +140,21 @@ public sealed class AnnualDayOfMonthRecurrence : AnnualRecurrence
 		if (year < startYear)
 			year = startYear;
 
-		Date firstOccurrence = this.UnsafeGetOccurrence(year);
+		Date firstOccurrence = this.GetOccurrenceCore(year);
 		if (firstOccurrence >= date)
 			yield return firstOccurrence;
 
 		for (++year; year <= endYear; ++year)
-			yield return this.UnsafeGetOccurrence(year);
+			yield return this.GetOccurrenceCore(year);
 	}
 
 	/// <inheritdoc />
-	public override Date GetOccurrence(Int32 year)
+	protected internal override Date GetOccurrenceCore(Int32 year)
 	{
-		return year >= this.StartYear && year <= this.EndYear
-			? this.UnsafeGetOccurrence(year)
-			: Date.Empty;
-	}
-
-	private Date UnsafeGetOccurrence(Int32 year)
-	{
-		Debug.Assert(year >= this.StartYear);
-		Debug.Assert(year <= this.EndYear);
-
 		Int32 month = this.Month;
 		Int32 day = this.Day;
-		Date occurrence = Date.UnsafeCreate(year, month, day);
-		Int32 adjustment = _adjustments[(Int32)Date.UnsafeDayOfWeek(year, month, day)];
+		Date occurrence = Date.UncheckedCreate(year, month, day);
+		Int32 adjustment = _adjustments[(Int32)Date.UncheckedDayOfWeek(year, month, day)];
 		if (adjustment != 0)
 			occurrence = Date.AddSmallDays(occurrence, adjustment);
 		return occurrence;

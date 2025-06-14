@@ -73,7 +73,112 @@ partial struct Date
 	/// </remarks>
 	public Date AddMonths(Int32 number)
 	{
-		Int32 year = this.Year;
+		if (number >= 0)
+		{
+			if (number <= MonthsPerYear)
+				return AddSmallPositiveMonths(this, number);
+		}
+		else
+		{
+			if (number >= -MonthsPerYear)
+				return AddSmallNegativeMonths(this, number);
+		}
+
+		return AddLargeMonths(this, number);
+	}
+
+	private static Date AddSmallNegativeMonths(Date date, Int32 number)
+	{
+		Debug.Assert(number <= 0);
+		Debug.Assert(number >= -MonthsPerYear);
+
+		Int32 packedValue = date._packedValue;
+		if (packedValue == 0)
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
+
+		packedValue += PackMonth(number);
+
+		if (ExtractSignedMonthDay(packedValue) < PackMonthDay(January, 1))
+		{
+			if (packedValue >= MinValue._packedValue + PackYear(1) - PackMonth(MonthsPerYear))
+				packedValue = packedValue - PackYear(1) + PackMonth(MonthsPerYear);
+			else
+				ThrowHelper.ThrowOverflowException();
+		}
+
+		Int32 day = UnpackDay(packedValue);
+
+		if (day > MinDaysPerMonth)
+		{
+			Int32 month = UnpackMonth(packedValue);
+			if (IsShortMonth(month))
+				packedValue = ClampDayOfShortMonth(packedValue, month, day);
+		}
+
+		return new Date(packedValue);
+	}
+
+	private static Date AddSmallPositiveMonths(Date date, Int32 number)
+	{
+		Debug.Assert(number >= 0);
+		Debug.Assert(number <= MonthsPerYear);
+
+		Int32 packedValue = date._packedValue;
+		if (packedValue == 0)
+			ThrowHelper.ThrowEmptyDateInvalidOperationException();
+
+		packedValue += PackMonth(number);
+
+		if (ExtractMonthDay(packedValue) > PackMonthDay(December, DaysInDecember))
+		{
+			if (packedValue <= MaxValue._packedValue - PackYear(1) + PackMonth(MonthsPerYear))
+				packedValue = packedValue + PackYear(1) - PackMonth(MonthsPerYear);
+			else
+				ThrowHelper.ThrowOverflowException();
+		}
+
+		Int32 day = UnpackDay(packedValue);
+
+		if (day > MinDaysPerMonth)
+		{
+			Int32 month = UnpackMonth(packedValue);
+			if (IsShortMonth(month))
+				packedValue = ClampDayOfShortMonth(packedValue, month, day);
+		}
+
+		return new Date(packedValue);
+	}
+
+	private static Int32 ClampDayOfShortMonth(Int32 packedValue, Int32 month, Int32 day)
+	{
+		Debug.Assert(month == UnpackMonth(packedValue));
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+		Debug.Assert(IsShortMonth(month));
+		Debug.Assert(day == UnpackDay(packedValue));
+		Debug.Assert(day >= 1);
+		Debug.Assert(day <= MaxDaysPerMonth);
+
+		if (month != February)
+		{
+			if (day == MaxDaysPerMonth)
+				--packedValue;
+		}
+		else
+		{
+			Int32 year = UnpackYear(packedValue);
+			Int32 daysInMonth = UncheckedDaysInMonth(year, month);
+			Int32 excessDays = day - daysInMonth;
+			if (excessDays > 0)
+				packedValue -= excessDays;
+		}
+
+		return packedValue;
+	}
+
+	private static Date AddLargeMonths(Date date, Int32 number)
+	{
+		Int32 year = date.Year;
 		if (year == 0)
 			ThrowHelper.ThrowEmptyDateInvalidOperationException();
 
@@ -84,8 +189,15 @@ partial struct Date
 		if (unchecked((UInt32)(number + maxNumber)) > maxNumber * 2)
 			ThrowHelper.ThrowOverflowException();
 
-		Int32 month = this.Month + number;
-		Int32 offsetYears = month > 0 ? (Int32)(((UInt32)month - 1) / MonthsPerYear) : month / MonthsPerYear - 1;
+		Int32 month = date.Month + number;
+
+		// Unoptimized:
+		//   Int32 offsetYears = month > 0 ? (Int32)(((UInt32)month - 1) / MonthsPerYear) : month / MonthsPerYear - 1;
+		// Optimized (valid for month in [-131074..131075]):
+		const Int32 shift = 19;
+		const Int32 multiplier = (1 << shift) / MonthsPerYear + 1;
+		Int32 offsetYears = (Int32)(((Int64)(month >= 0 ? month - 1 : month) * multiplier) >> shift);
+
 		year += offsetYears;
 		// Unoptimized:
 		//   if (year < MinYear || year > MaxYear)
@@ -93,11 +205,13 @@ partial struct Date
 		if (unchecked((UInt32)(year - MinYear)) > MaxYear - MinYear)
 			ThrowHelper.ThrowOverflowException();
 		month -= offsetYears * MonthsPerYear;
-		Int32 day = this.Day;
+		Int32 day = date.Day;
 
-		if (day > MinDaysPerMonth)
+		if (day > MinDaysPerMonth && IsShortMonth(month))
 		{
-			Int32 daysInMonth = UncheckedDaysInMonth(year, month);
+			Int32 daysInMonth = month != February
+				? 30
+				: UncheckedDaysInMonth(year, month);
 			if (day > daysInMonth)
 				day = daysInMonth;
 		}
@@ -127,13 +241,17 @@ partial struct Date
 		{
 			return number <= MinDaysPerMonth
 				? AddSmallPositiveDays(this, number)
-				: AddLargePositiveDays(this, number);
+				: number <= DaysPerYear
+					? AddMediumPositiveDays(this, number)
+					: AddLargePositiveDays(this, number);
 		}
 		else
 		{
 			return number >= -MinDaysPerMonth
 				? AddSmallNegativeDays(this, number)
-				: AddLargeNegativeDays(this, number);
+				: number >= -DaysPerYear
+					? AddMediumNegativeDays(this, number)
+					: AddLargeNegativeDays(this, number);
 		}
 	}
 
@@ -147,7 +265,7 @@ partial struct Date
 			: AddSmallNegativeDays(date, number);
 	}
 
-	private static Date AddSmallNegativeDays(Date date, Int32 number)
+	internal static Date AddSmallNegativeDays(Date date, Int32 number)
 	{
 		Debug.Assert(number <= 0);
 		Debug.Assert(number >= -MinDaysPerMonth);
@@ -186,49 +304,59 @@ partial struct Date
 		return new Date(packedValue);
 	}
 
-	private static Date AddLargeNegativeDays(Date date, Int32 number)
+	private static Date AddMediumNegativeDays(Date date, Int32 number)
 	{
 		Debug.Assert(number <= 0);
+		Debug.Assert(number >= -DaysPerYear);
 
 		Int32 year = date.Year;
 		if (year == 0)
 			ThrowHelper.ThrowEmptyDateInvalidOperationException();
-		if (number < -MaxDayNumber)
-			ThrowHelper.ThrowOverflowException();
 		Int32 month = date.Month;
-		Int32 day = date.Day + number;
+		Int32 day = date.Day;
 
-		if (day > -75)
+		// Move January and February to the end of the previous year as months 13 and 14:
+		if (month <= February)
 		{
-			while (day <= 0)
-			{
-				if (month > January)
-				{
-					--month;
-				}
-				else
-				{
-					if (year > MinYear)
-						--year;
-					else
-						ThrowHelper.ThrowOverflowException();
-
-					month = December;
-				}
-
-				day += UncheckedDaysInMonth(year, month);
-			}
-
-			return UncheckedCreate(year, month, day);
+			--year;
+			month += MonthsPerYear;
 		}
 
-		Int32 dayNumber = date.DayNumber + number;
+		Int32 daysSinceMarch1 = GetDaysInPreviousMonths(month) + day + number - 1;
+
+		if (daysSinceMarch1 < 0)
+		{
+			daysSinceMarch1 += DaysPerYear + (UncheckedIsLeapYear(year) ? 1 : 0);
+			--year;
+		}
+
+		GetMonthAndDayFromDayOfRotatedYear(daysSinceMarch1, out month, out day);
+
+		// Move January and February to the beginning of the next year:
+		if (month > December)
+		{
+			++year;
+			month -= MonthsPerYear;
+		}
+
+		if (year < MinYear)
+			ThrowHelper.ThrowOverflowException();
+
+		return UncheckedCreate(year, month, day);
+	}
+
+	private static Date AddLargeNegativeDays(Date date, Int32 number)
+	{
+		Debug.Assert(number <= 0);
+
+		Int32 dayNumber = date.DayNumber + number; // DayNumber checks for an empty date.
 		if (dayNumber < MinDayNumber)
 			ThrowHelper.ThrowOverflowException();
+
 		return UncheckedFromDayNumber(dayNumber);
 	}
 
-	private static Date AddSmallPositiveDays(Date date, Int32 number)
+	internal static Date AddSmallPositiveDays(Date date, Int32 number)
 	{
 		Debug.Assert(number >= 0);
 		Debug.Assert(number <= MinDaysPerMonth);
@@ -270,49 +398,56 @@ partial struct Date
 		return new Date(packedValue);
 	}
 
-	private static Date AddLargePositiveDays(Date date, Int32 number)
+	private static Date AddMediumPositiveDays(Date date, Int32 number)
 	{
 		Debug.Assert(number >= 0);
+		Debug.Assert(number <= DaysPerYear);
 
 		Int32 year = date.Year;
 		if (year == 0)
 			ThrowHelper.ThrowEmptyDateInvalidOperationException();
-		if (number > MaxDayNumber)
-			ThrowHelper.ThrowOverflowException();
 		Int32 month = date.Month;
-		Int32 day = date.Day + number;
+		Int32 day = date.Day;
 
-		if (day < 75)
+		// Move January and February to the end of the previous year as months 13 and 14:
+		if (month <= February)
 		{
-			while (day > MinDaysPerMonth)
-			{
-				Int32 daysInMonth = UncheckedDaysInMonth(year, month);
-				if (day <= daysInMonth)
-					break;
-
-				if (month < December)
-				{
-					++month;
-				}
-				else
-				{
-					if (year < MaxYear)
-						++year;
-					else
-						ThrowHelper.ThrowOverflowException();
-
-					month = January;
-				}
-
-				day -= daysInMonth;
-			}
-
-			return UncheckedCreate(year, month, day);
+			--year;
+			month += MonthsPerYear;
 		}
 
-		Int32 dayNumber = date.DayNumber + number;
-		if (dayNumber > MaxDayNumber)
+		Int32 daysSinceMarch1 = GetDaysInPreviousMonths(month) + day + number - 1;
+		Int32 daysSinceMarch1OfNextYear = daysSinceMarch1 - DaysPerYear;
+
+		if (daysSinceMarch1OfNextYear >= 0 && (!UncheckedIsLeapYear(year + 1) || --daysSinceMarch1OfNextYear >= 0))
+		{
+			++year;
+			daysSinceMarch1 = daysSinceMarch1OfNextYear;
+		}
+
+		GetMonthAndDayFromDayOfRotatedYear(daysSinceMarch1, out month, out day);
+
+		// Move January and February to the beginning of the next year:
+		if (month > December)
+		{
+			++year;
+			month -= MonthsPerYear;
+		}
+
+		if (year > MaxYear)
 			ThrowHelper.ThrowOverflowException();
+
+		return UncheckedCreate(year, month, day);
+	}
+
+	private static Date AddLargePositiveDays(Date date, Int32 number)
+	{
+		Debug.Assert(number >= 0);
+
+		Int32 dayNumber = unchecked(date.DayNumber + number); // DayNumber checks for an empty date.
+		if (unchecked((UInt32)dayNumber) > MaxDayNumber)
+			ThrowHelper.ThrowOverflowException();
+
 		return UncheckedFromDayNumber(dayNumber);
 	}
 

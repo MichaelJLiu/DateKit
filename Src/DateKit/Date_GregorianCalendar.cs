@@ -56,8 +56,7 @@ partial struct Date
 		public Int32 DaysInPreviousYears;
 
 		// The DayOfWeekMonthData starting offset for this year, equal to the day of the week of January 1
-		// of this year, minus 1 modulo DaysPerWeek to compensate for adding 1-based day values,
-		// plus DaysPerWeek if this is a leap year, multiplied by MonthsPerYear.
+		// of this year, plus DaysPerWeek if this is a leap year, multiplied by MonthsPerYear.
 		public Byte DayOfWeekMonthDataOffset;
 	}
 
@@ -76,7 +75,7 @@ partial struct Date
 		YearDataArray data = new();
 		Int32 daysInPreviousYears =
 			-(DaysPerYear - DaysInJanuary - DaysInFebruary + 1); // January 1, 0001, to March 1, 0000, minus one
-		Int32 firstDayOfWeek = 0; // Monday, January 1, 0001, minus one
+		Int32 firstDayOfWeek = 1; // Monday, January 1, 0001
 		data[0].DaysInPreviousYears = daysInPreviousYears;
 
 		for (Int32 year = 1; year <= MaxYear; ++year)
@@ -116,7 +115,7 @@ partial struct Date
 			5, 1, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4,
 			6, 2, 3, 6, 1, 4, 6, 2, 5, 0, 3, 5,
 		];
-#endif
+#endif // #if NET8_0_OR_GREATER && DATEKIT_LOOKUP_TABLES
 
 	// This method is equivalent to DayOfWeek but does not validate its arguments.
 	internal static DayOfWeek UncheckedDayOfWeek(Int32 year, Int32 month, Int32 day)
@@ -132,11 +131,6 @@ partial struct Date
 
 #if NET8_0_OR_GREATER && DATEKIT_LOOKUP_TABLES
 		sum += DayOfWeekMonthData[s_yearData[year].DayOfWeekMonthDataOffset + month];
-		// Unoptimized:
-		//   Int32 dayOfWeek = sum % DaysPerWeek;
-		// Optimized (valid for sum in [0..85]; 8 is minimum shift count that encompasses [1..(6 + 31)]):
-		const Int32 shift = 8;
-		const Int32 multiplier = (1 << shift) / DaysPerWeek + 1;
 #else
 		if (month <= February)
 		{
@@ -144,18 +138,48 @@ partial struct Date
 			sum += 3;
 		}
 
-		sum += (month * 81 + 72) >>> 5;
+		sum += (month * 81 + 104) >>> 5;
 		sum += year + (year >>> 2);
 		Int32 century = GetCentury(year);
 		sum += -century + (century >>> 2);
-		// Unoptimized:
-		//   Int32 dayOfWeek = sum % DaysPerWeek;
-		// Optimized (valid for sum in [0..13107]):
-		const Int32 shift = 16;
-		const Int32 multiplier = (1 << shift) / DaysPerWeek + 1;
 #endif
-		Int32 dayOfWeek = (Int32)(((UInt32)sum * multiplier % (1 << shift) * DaysPerWeek) >>> shift);
+		// Unoptimized:
+		//   Int32 dayOfWeek = (sum - 1) % DaysPerWeek;
+		// Optimized (valid for sum in [1..0x08000006]):
+		const Int32 multiplier = (Int32)((1L << 32) / DaysPerWeek);
+		Int32 dayOfWeek = (unchecked(sum * multiplier) >>> 29) - 1;
+		// If n = sum - 1 = 7·q + r, where 0 <= r < 7, then sum × multiplier 
+		//   = (n + 1)·floor(2^32 / 7)
+		//   = (n + 1)·[(2^32 - 4) / 7] because 2^32 mod 7 = 4
+		//   = [(2^32)·(7·q + r + 1) - 4·(n + 1)] / 7
+		//   = (2^32)·q + [(2^32)·(r + 1) - 4·(n + 1)] / 7.
+		// The * operator discards the upper 32 bits (which contain q).
+		// The >>> operator divides the lower 32 bits by 2^29, yielding [8·r + 8 - 4·(n + 1) / 2^29] / 7,
+		// and then rounds down, yielding floor((8·r + 7) / 7) = r + 1 when n <= 0x08000005.
 		return (DayOfWeek)dayOfWeek;
+	}
+
+	internal static Int32 UncheckedDayOfYear(Int32 month, Int32 day)
+	{
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+		Debug.Assert(day >= 1);
+		Debug.Assert(day <= UncheckedDaysInMonth(month));
+
+		Int32 daysInPreviousMonths;
+
+		if (month <= February)
+		{
+			// Map (1, 2) to (0, 31):
+			daysInPreviousMonths = (1 - month) & 31;
+		}
+		else
+		{
+			// Map (3, 4, ..., 12) to (59, 90, ..., 334):
+			daysInPreviousMonths = (month * 979 - 1030) >>> 5;
+		}
+
+		return daysInPreviousMonths + day;
 	}
 
 	// Returns the number of days in a specified month of a common (non-leap) year.
@@ -200,7 +224,7 @@ partial struct Date
 		return UncheckedDaysInMonth(year, month);
 	}
 
-	// This method is equivalent to DaysInMonth(Int32, Int32) but does not validate its arguments.
+	// This method is equivalent to DaysInMonth but does not validate its arguments.
 	internal static Int32 UncheckedDaysInMonth(Int32 year, Int32 month)
 	{
 		Debug.Assert(year >= 1);
@@ -214,6 +238,15 @@ partial struct Date
 		// (month | 0b11110) equals 30 for even months and 31 for odd months, which is correct if month <= 7
 		// but incorrect if month >= 8. In the former case, (month >>> 3) equals 0, and the XOR has no effect.
 		// In the latter case, (month >>> 3) equals 1, and the XOR changes 30 to 31 and vice versa.
+	}
+
+	// Determines whether a specified month has fewer than 31 days.
+	private static Boolean IsShortMonth(Int32 month)
+	{
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+
+		return (0b010_100_101_010_0 & (1 << month)) != 0;
 	}
 
 	// Returns the number of days between March 1 and the first day of a specified month.
@@ -242,6 +275,23 @@ partial struct Date
 		// Move the epoch from March 1, 0000, to January 1, 0001, and subtract one:
 		return daysInPreviousYears - (DaysPerYear - DaysInJanuary - DaysInFebruary + 1);
 #endif
+	}
+
+	private static void GetMonthAndDayFromDayOfRotatedYear(Int32 daysSinceMarch1, out Int32 month, out Int32 day)
+	{
+		Debug.Assert(daysSinceMarch1 >= 0);
+		Debug.Assert(daysSinceMarch1 <= DaysPerYear);
+
+		// Unoptimized:
+		//   Int32 n3 = daysSinceMarch1 * 5 + 461;
+		//   month = n3 / 153;
+		//   day = n3 % 153 / 5 + 1;
+		// Optimized (valid for daysSinceMarch1 in [0..733]):
+		const Int32 shift3 = 16;
+		const Int32 multiplier3 = (1 << shift3) * 5 / 153;
+		Int32 n3 = daysSinceMarch1 * multiplier3 + 197913;
+		month = n3 >>> shift3; // [3..14]
+		day = (Int32)((UInt32)n3 % (1 << shift3) / multiplier3) + 1; // [1..31]
 	}
 
 	/// <summary>
@@ -287,10 +337,9 @@ partial struct Date
 		const Int32 divisor = 25;
 		// Unoptimized:
 		//   return unsignedYear % divisor != 0;
-		// Optimized (valid for year in [0..43690]; 17 is minimum shift count that encompasses [0..9999]):
-		const Int32 shift = 17;
-		const Int32 multiplier = (1 << shift) / divisor + 1;
-		return unsignedYear * multiplier % (1 << shift) >= multiplier;
+		// Optimized (valid for year in [0..0x3FFFFFFF]):
+		const Int32 multiplier = (Int32)((1L << 32) / divisor + 1);
+		return unchecked(unsignedYear * multiplier) >= multiplier;
 	}
 
 	// Divides a specified year by 100 and returns the quotient.

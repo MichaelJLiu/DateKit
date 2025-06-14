@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if NET7_0_OR_GREATER // for StringSyntaxAttribute
-using System.Diagnostics.CodeAnalysis;
-#endif
 using System.Globalization;
 using System.Linq;
 using System.Text;
+#if NET7_0_OR_GREATER
+using StringSyntaxAttribute = System.Diagnostics.CodeAnalysis.StringSyntaxAttribute;
+#endif
 
 namespace DateKit;
 

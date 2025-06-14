@@ -12,14 +12,14 @@ namespace DateKit.Schedules;
 [TestFixture]
 public class AnnualRecurrenceOptionsTests
 {
-	#region StartDate
+	#region StartYear
 
 	[TestCase(Date.MinYear - 1)]
 	[TestCase(2001)]
-	public void SetStartDate_WithInvalidValue_ThrowsException(Int32 startYear)
+	public void SetStartYear_WithInvalidValue_ThrowsException(Int32 startYear)
 	{
 		// Arrange:
-		AnnualDayOfWeekOfMonthRecurrenceOptions options = new() { EndYear = 2000 };
+		AnnualRecurrenceOptions options = new() { EndYear = 2000 };
 
 		// Act:
 		Action action = () => options.StartYear = startYear;
@@ -27,16 +27,16 @@ public class AnnualRecurrenceOptionsTests
 		// Assert:
 		action.Should().Throw<ArgumentOutOfRangeException>()
 			.WithParameterName("value")
-			.WithMessage("StartYear must be between 1 and 2000 (the value of EndYear).*");
+			.WithMessage("The value must be between 1 and 2000 (EndYear).*");
 		options.StartYear.Should().Be(Date.MinYear);
 	}
 
 	[TestCase(Date.MinYear)]
 	[TestCase(2000)]
-	public void SetStartDate_WithValidValue_UpdatesProperty(Int32 startYear)
+	public void SetStartYear_WithValidValue_UpdatesProperty(Int32 startYear)
 	{
 		// Arrange:
-		AnnualDayOfWeekOfMonthRecurrenceOptions options = new() { EndYear = 2000 };
+		AnnualRecurrenceOptions options = new() { EndYear = 2000 };
 
 		// Act:
 		options.StartYear = startYear;
@@ -47,14 +47,14 @@ public class AnnualRecurrenceOptionsTests
 
 	#endregion
 
-	#region EndDate
+	#region EndYear
 
 	[TestCase(1999)]
 	[TestCase(Date.MaxYear + 1)]
-	public void SetEndDate_WithInvalidValue_ThrowsException(Int32 endYear)
+	public void SetEndYear_WithInvalidValue_ThrowsException(Int32 endYear)
 	{
 		// Arrange:
-		AnnualDayOfWeekOfMonthRecurrenceOptions options = new() { StartYear = 2000 };
+		AnnualRecurrenceOptions options = new() { StartYear = 2000 };
 
 		// Act:
 		Action action = () => options.EndYear = endYear;
@@ -62,16 +62,16 @@ public class AnnualRecurrenceOptionsTests
 		// Assert:
 		action.Should().Throw<ArgumentOutOfRangeException>()
 			.WithParameterName("value")
-			.WithMessage("EndYear must be between 2000 (the value of StartYear) and 9999.*");
+			.WithMessage("The value must be between 2000 (StartYear) and 9999.*");
 		options.EndYear.Should().Be(Date.MaxYear);
 	}
 
 	[TestCase(2000)]
 	[TestCase(Date.MaxYear)]
-	public void SetEndDate_WithValidValue_UpdatesProperty(Int32 endYear)
+	public void SetEndYear_WithValidValue_UpdatesProperty(Int32 endYear)
 	{
 		// Arrange:
-		AnnualDayOfWeekOfMonthRecurrenceOptions options = new() { StartYear = 2000 };
+		AnnualRecurrenceOptions options = new() { StartYear = 2000 };
 
 		// Act:
 		options.EndYear = endYear;

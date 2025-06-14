@@ -4,8 +4,6 @@ using System.Linq;
 
 using FluentAssertions;
 
-using Moq;
-
 using NUnit.Framework;
 
 namespace DateKit.Schedules;
@@ -19,7 +17,7 @@ public class InverseScheduleTests
 	#region Constructor
 
 	[Test]
-	public void Constructor_WithNull_ThrowsException()
+	public void Constructor_WithNullSchedule_ThrowsException()
 	{
 		// Arrange:
 		Schedule baseSchedule = null!;
@@ -39,33 +37,19 @@ public class InverseScheduleTests
 	public void BaseSchedule_ReturnsExpected()
 	{
 		// Arrange:
-		Schedule baseSchedule = Mock.Of<Schedule>();
-
-		// Act:
+		Schedule baseSchedule = new MockSchedule();
 		InverseSchedule schedule = new(baseSchedule);
 
+		// Act:
+		Schedule actualBaseSchedule = schedule.BaseSchedule;
+
 		// Assert:
-		schedule.BaseSchedule.Should().BeSameAs(baseSchedule);
+		actualBaseSchedule.Should().BeSameAs(baseSchedule);
 	}
 
 	#endregion
 
 	#region Contains
-
-	[Test]
-	public void Contains_WithEmptyDate_ReturnsFalse()
-	{
-		// Arrange:
-		Date date = Date.Empty;
-		Schedule schedule = new InverseSchedule(
-			Mock.Of<Schedule>(schedule => !schedule.Contains(date)));
-
-		// Act:
-		Boolean actualResult = schedule.Contains(date);
-
-		// Assert:
-		actualResult.Should().BeFalse();
-	}
 
 	[TestCase(false)]
 	[TestCase(true)]
@@ -73,8 +57,7 @@ public class InverseScheduleTests
 	{
 		// Arrange:
 		Date date = new(2000, 6, 15);
-		Schedule schedule = new InverseSchedule(
-			Mock.Of<Schedule>(schedule => schedule.Contains(date) == isDateInBaseSchedule));
+		Schedule schedule = new InverseSchedule(new MockSchedule(contains: [(date, isDateInBaseSchedule)]));
 
 		// Act:
 		Boolean actualResult = schedule.Contains(date);
@@ -87,33 +70,18 @@ public class InverseScheduleTests
 
 	#region EnumerateBackwardFrom
 
-	[Test]
-	public void EnumerateBackwardFrom_WithEmptyDate_ThrowsException()
-	{
-		// Arrange:
-		Schedule schedule = new InverseSchedule(Mock.Of<Schedule>());
-		Date date = Date.Empty;
-
-		// Act:
-		Func<IEnumerable<Date>> func = () => schedule.EnumerateBackwardFrom(date);
-
-		// Assert:
-		func.Should().Throw<ArgumentException>().WithParameterName("date");
-	}
-
 	[TestCaseSource(nameof(GetEnumerateBackwardFromTestCases))]
 	public void EnumerateBackwardFrom_WithValidDate_ReturnsExpected(
-		Date date, Date[] baseDates, Int32 takeCount, Date[] expectedDates)
+		Date date, Date[] baseDates, Int32 takeCount, Date[] expectedResults)
 	{
 		// Arrange:
-		Schedule schedule = new InverseSchedule(
-			Mock.Of<Schedule>(schedule => schedule.EnumerateBackwardFrom(date) == baseDates));
+		Schedule schedule = new InverseSchedule(new MockSchedule(enumerateBackwardFrom: [(date, baseDates)]));
 
 		// Act:
 		Date[] actualResults = schedule.EnumerateBackwardFrom(date).Take(takeCount).ToArray();
 
 		// Assert:
-		actualResults.Should().Equal(expectedDates);
+		actualResults.Should().Equal(expectedResults);
 	}
 
 	private static IEnumerable<Object[]> GetEnumerateBackwardFromTestCases()
@@ -131,33 +99,18 @@ public class InverseScheduleTests
 
 	#region EnumerateForwardFrom
 
-	[Test]
-	public void EnumerateForwardFrom_WithEmptyDate_ThrowsException()
-	{
-		// Arrange:
-		Schedule schedule = new InverseSchedule(Mock.Of<Schedule>());
-		Date date = Date.Empty;
-
-		// Act:
-		Func<IEnumerable<Date>> func = () => schedule.EnumerateForwardFrom(date);
-
-		// Assert:
-		func.Should().Throw<ArgumentException>().WithParameterName("date");
-	}
-
 	[TestCaseSource(nameof(GetEnumerateForwardFromTestCases))]
 	public void EnumerateForwardFrom_WithValidDate_ReturnsExpected(
-		Date date, Date[] baseDates, Int32 takeCount, Date[] expectedDates)
+		Date date, Date[] baseDates, Int32 takeCount, Date[] expectedResults)
 	{
 		// Arrange:
-		Schedule schedule = new InverseSchedule(
-			Mock.Of<Schedule>(schedule => schedule.EnumerateForwardFrom(date) == baseDates));
+		Schedule schedule = new InverseSchedule(new MockSchedule(enumerateForwardFrom: [(date, baseDates)]));
 
 		// Act:
 		Date[] actualResults = schedule.EnumerateForwardFrom(date).Take(takeCount).ToArray();
 
 		// Assert:
-		actualResults.Should().Equal(expectedDates);
+		actualResults.Should().Equal(expectedResults);
 	}
 
 	private static IEnumerable<Object[]> GetEnumerateForwardFromTestCases()
