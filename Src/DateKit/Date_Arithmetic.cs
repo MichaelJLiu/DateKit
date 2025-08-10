@@ -255,7 +255,7 @@ partial struct Date
 		}
 	}
 
-	private static Date AddSmallNegativeDays(Date date, Int32 number)
+	internal static Date AddSmallNegativeDays(Date date, Int32 number)
 	{
 		Debug.Assert(number <= 0);
 		Debug.Assert(number >= -MinDaysPerMonth);
@@ -346,7 +346,7 @@ partial struct Date
 		return UncheckedFromDayNumber(dayNumber);
 	}
 
-	private static Date AddSmallPositiveDays(Date date, Int32 number)
+	internal static Date AddSmallPositiveDays(Date date, Int32 number)
 	{
 		Debug.Assert(number >= 0);
 		Debug.Assert(number <= MinDaysPerMonth);

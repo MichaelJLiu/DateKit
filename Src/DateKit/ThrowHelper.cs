@@ -7,6 +7,7 @@ namespace DateKit;
 internal enum ExceptionArgument
 {
 	// ReSharper disable InconsistentNaming
+	value,
 	year,
 	month,
 	day,
@@ -21,6 +22,7 @@ internal static class ThrowHelper
 {
 	private static readonly String[] s_paramNames =
 	[
+		nameof(ExceptionArgument.value),
 		nameof(ExceptionArgument.year),
 		nameof(ExceptionArgument.month),
 		nameof(ExceptionArgument.day),
