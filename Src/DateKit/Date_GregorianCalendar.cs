@@ -35,10 +35,10 @@ partial struct Date
 	internal const Int32 MinDaysPerMonth = 28;
 	internal const Int32 MaxDaysPerMonth = 31;
 
-	private const Int32 DaysInJanuary = 31;
-	private const Int32 DaysInFebruary = 28;
-	private const Int32 LeapDay = 29;
-	private const Int32 DaysInDecember = 31;
+	internal const Int32 DaysInJanuary = 31;
+	internal const Int32 DaysInFebruary = 28;
+	internal const Int32 LeapDay = 29;
+	internal const Int32 DaysInDecember = 31;
 
 	/// <summary>
 	/// Represents the number of days in a week.
@@ -157,6 +157,17 @@ partial struct Date
 		// The >>> operator divides the lower 32 bits by 2^29, yielding [8·r + 8 - 4·(n + 1) / 2^29] / 7,
 		// and then rounds down, yielding floor((8·r + 7) / 7) = r + 1 when n <= 0x08000005.
 		return (DayOfWeek)dayOfWeek;
+	}
+
+	// Returns the number of days in a specified month of a common (non-leap) year.
+	internal static Int32 UncheckedDaysInMonth(Int32 month)
+	{
+		Debug.Assert(month >= January);
+		Debug.Assert(month <= December);
+
+		return month != February
+			? (month | 30) ^ (month >>> 3)
+			: DaysInFebruary;
 	}
 
 	/// <summary>

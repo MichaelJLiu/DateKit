@@ -121,7 +121,7 @@ public readonly partial struct Date
 		return PackYear(year) | PackMonth(month) | day;
 	}
 
-	private static Int32 PackMonthDay(Int32 month, Int32 day)
+	internal static Int32 PackMonthDay(Int32 month, Int32 day)
 	{
 		return PackMonth(month) | day;
 	}
@@ -305,6 +305,8 @@ public readonly partial struct Date
 	/// or zero if this instance is <see cref="Empty" />.
 	/// </value>
 	public Int32 Day => MonthShift >= 8 ? _day : UnpackDay(_packedValue);
+
+	internal Int32 PackedMonthDay => ExtractMonthDay(_packedValue);
 
 	/// <summary>
 	/// Gets the day number of the date.
