@@ -18,6 +18,8 @@ partial struct Date
 
 	internal const Int32 January = 1;
 	internal const Int32 February = 2;
+	internal const Int32 March = 3;
+	internal const Int32 April = 4;
 	internal const Int32 December = 12;
 
 	/// <summary>
@@ -38,6 +40,7 @@ partial struct Date
 	internal const Int32 DaysInJanuary = 31;
 	internal const Int32 DaysInFebruary = 28;
 	internal const Int32 LeapDay = 29;
+	internal const Int32 DaysInMarch = 31;
 	internal const Int32 DaysInDecember = 31;
 
 	/// <summary>
